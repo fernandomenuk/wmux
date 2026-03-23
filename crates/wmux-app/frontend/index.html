@@ -8,7 +8,31 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="terminal-container"></div>
+  <!-- Tab Bar -->
+  <div id="tab-bar">
+    <button id="sidebar-toggle" title="Toggle sidebar">&#9776;</button>
+    <div id="tabs"></div>
+    <button id="new-tab" title="New workspace">+</button>
+  </div>
+
+  <div id="main-area">
+    <!-- Sidebar -->
+    <div id="sidebar">
+      <div id="workspace-list"></div>
+      <button id="sidebar-new-ws" title="New workspace">+ New Workspace</button>
+    </div>
+
+    <!-- Terminal Pane Area -->
+    <div id="pane-area"></div>
+  </div>
+
+  <!-- Status Bar -->
+  <div id="status-bar">
+    <span id="status-shell"></span>
+    <span id="status-workspace"></span>
+    <span id="status-pane"></span>
+  </div>
+
   <script type="module" src="main.js"></script>
 </body>
 </html>

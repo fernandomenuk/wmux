@@ -36,6 +36,10 @@ struct Args {
 async fn main() {
     let args = Args::parse();
 
+    eprintln!("\u{26A0}\u{FE0F}  Notice: The terminal-based wmux is deprecated in favor of the new desktop application.");
+    eprintln!("    Download the modern wmux for Windows at: https://github.com/fernandomenuk/wmux");
+    eprintln!();
+
     // Validate shell exists if explicitly specified
     if let Some(ref shell) = args.shell {
         if !std::path::Path::new(shell).exists() {

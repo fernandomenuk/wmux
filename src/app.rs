@@ -3,7 +3,7 @@ use std::io;
 
 use std::time::Duration;
 
-use crossterm::event::{self, Event, KeyEventKind};
+use crossterm::event::{self, Event, KeyEventKind, MouseEventKind, MouseButton, EnableMouseCapture, DisableMouseCapture};
 use crossterm::terminal::{self, EnterAlternateScreen, LeaveAlternateScreen};
 use crossterm::ExecutableCommand;
 use ratatui::backend::CrosstermBackend;
@@ -11,13 +11,22 @@ use ratatui::Terminal;
 use tokio::sync::mpsc;
 use uuid::Uuid;
 
-use crate::input::{Action, InputHandler, key_event_to_bytes};
+use crate::input::{Action, InputHandler, key_event_to_bytes, mouse_event_to_sgr_bytes};
 use crate::model::split_tree::Direction;
 use crate::model::surface::Surface;
 use crate::model::workspace::Workspace;
 use crate::terminal::pty::{spawn_pty, start_pty_reader};
 use crate::terminal::shell::detect_shell;
 use crate::tui::render::{render_frame, RenderContext};
+
+pub struct DragState {
+    pub border_path: Vec<bool>,
+    pub direction: Direction,
+    pub region_x: u16,
+    pub region_y: u16,
+    pub region_w: u16,
+    pub region_h: u16,
+}
 
 pub struct App {
     pub workspaces: Vec<Workspace>,
@@ -29,6 +38,7 @@ pub struct App {
     pub zoom_surface: Option<Uuid>,
     pub should_quit: bool,
     pub terminal_size: (u16, u16),
+    pub drag_state: Option<DragState>,
 }
 
 impl App {
@@ -43,6 +53,7 @@ impl App {
             zoom_surface: None,
             should_quit: false,
             terminal_size: (80, 24),
+            drag_state: None,
         }
     }
 
@@ -156,6 +167,7 @@ pub struct SocketRequest {
 
 /// Restore terminal to normal state.
 fn cleanup_terminal() {
+    let _ = io::stdout().execute(DisableMouseCapture);
     let _ = terminal::disable_raw_mode();
     let _ = io::stdout().execute(LeaveAlternateScreen);
 }
@@ -170,6 +182,7 @@ pub async fn run(
     let mut stdout = io::stdout();
     terminal::enable_raw_mode()?;
     stdout.execute(EnterAlternateScreen)?;
+    stdout.execute(EnableMouseCapture)?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
@@ -225,6 +238,125 @@ pub async fn run(
                                     surface.resize(layout.width.saturating_sub(2), layout.height.saturating_sub(2));
                                 }
                             }
+                        }
+                    }
+                    Event::Mouse(mouse) => {
+                        let content_y_offset = 1u16; // tab bar
+                        let (tw, th) = app.terminal_size;
+
+                        // Skip clicks on tab bar or status bar
+                        if mouse.row < content_y_offset || mouse.row >= content_y_offset + th {
+                            continue;
+                        }
+                        let mx = mouse.column;
+                        let my = mouse.row.saturating_sub(content_y_offset);
+
+                        // Zoom mode: all mouse goes to zoomed surface
+                        if let Some(zoom_id) = app.zoom_surface {
+                            match mouse.kind {
+                                MouseEventKind::Down(_) | MouseEventKind::Up(_)
+                                | MouseEventKind::Drag(_) | MouseEventKind::ScrollUp
+                                | MouseEventKind::ScrollDown | MouseEventKind::Moved => {
+                                    if let Some(surface) = app.surfaces.get_mut(&zoom_id) {
+                                        if surface.screen().mouse_protocol_mode() != vt100::MouseProtocolMode::None {
+                                            let rel_x = mx.saturating_sub(1);
+                                            let rel_y = my.saturating_sub(1);
+                                            if let Some(bytes) = mouse_event_to_sgr_bytes(&mouse, rel_x, rel_y) {
+                                                let _ = surface.send_bytes(&bytes);
+                                            }
+                                        }
+                                    }
+                                }
+                                _ => {}
+                            }
+                            continue;
+                        }
+
+                        match mouse.kind {
+                            MouseEventKind::Down(MouseButton::Left) => {
+                                // Extract hit info without holding borrow on app
+                                let hit = app.workspaces.get(app.active_workspace).and_then(|ws| {
+                                    if let Some(border) = ws.split_tree.border_hit(mx, my, 0, 0, tw, th) {
+                                        Some(Err(border))
+                                    } else {
+                                        ws.split_tree.surface_at(mx, my, 0, 0, tw, th).map(|sid| {
+                                            let layouts = ws.split_tree.layout(0, 0, tw, th);
+                                            let layout = layouts.into_iter().find(|l| l.surface_id == sid);
+                                            Ok((sid, layout))
+                                        })
+                                    }
+                                });
+
+                                match hit {
+                                    Some(Err((path, dir, rx, ry, rw, rh))) => {
+                                        app.drag_state = Some(DragState {
+                                            border_path: path,
+                                            direction: dir,
+                                            region_x: rx,
+                                            region_y: ry,
+                                            region_w: rw,
+                                            region_h: rh,
+                                        });
+                                    }
+                                    Some(Ok((surface_id, layout))) => {
+                                        app.focused_surface = Some(surface_id);
+                                        if let Some(surface) = app.surfaces.get_mut(&surface_id) {
+                                            if surface.screen().mouse_protocol_mode() != vt100::MouseProtocolMode::None {
+                                                if let Some(layout) = layout {
+                                                    let rel_x = mx.saturating_sub(layout.x + 1);
+                                                    let rel_y = my.saturating_sub(layout.y + 1);
+                                                    if let Some(bytes) = mouse_event_to_sgr_bytes(&mouse, rel_x, rel_y) {
+                                                        let _ = surface.send_bytes(&bytes);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    _ => {}
+                                }
+                            }
+                            MouseEventKind::Drag(MouseButton::Left) => {
+                                if let Some(ref drag) = app.drag_state {
+                                    let new_ratio = match drag.direction {
+                                        Direction::Vertical => (mx.saturating_sub(drag.region_x)) as f64 / drag.region_w as f64,
+                                        Direction::Horizontal => (my.saturating_sub(drag.region_y)) as f64 / drag.region_h as f64,
+                                    };
+                                    let path = drag.border_path.clone();
+                                    if let Some(ws) = app.workspaces.get_mut(app.active_workspace) {
+                                        ws.split_tree.set_ratio_at(&path, new_ratio);
+                                    }
+                                    app.resize_active_workspace();
+                                    for surface in app.surfaces.values_mut() {
+                                        surface.dirty = true;
+                                    }
+                                }
+                            }
+                            MouseEventKind::Up(MouseButton::Left) => {
+                                app.drag_state = None;
+                            }
+                            // Mouse passthrough for scroll and other events
+                            MouseEventKind::ScrollUp | MouseEventKind::ScrollDown
+                            | MouseEventKind::Up(_) | MouseEventKind::Down(_) => {
+                                if app.drag_state.is_none() {
+                                    if let Some(id) = app.focused_surface {
+                                        if let Some(surface) = app.surfaces.get_mut(&id) {
+                                            if surface.screen().mouse_protocol_mode() != vt100::MouseProtocolMode::None {
+                                                if let Some(ws) = app.workspaces.get(app.active_workspace) {
+                                                    let layouts = ws.split_tree.layout(0, 0, tw, th);
+                                                    if let Some(layout) = layouts.iter().find(|l| l.surface_id == id) {
+                                                        let rel_x = mx.saturating_sub(layout.x + 1);
+                                                        let rel_y = my.saturating_sub(layout.y + 1);
+                                                        if let Some(bytes) = mouse_event_to_sgr_bytes(&mouse, rel_x, rel_y) {
+                                                            let _ = surface.send_bytes(&bytes);
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            _ => {}
                         }
                     }
                     _ => {}

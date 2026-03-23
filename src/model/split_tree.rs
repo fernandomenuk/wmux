@@ -150,4 +150,94 @@ impl SplitNode {
             SplitNode::Split { first, .. } => first.first_surface(),
         }
     }
+
+    /// Find which surface contains the given screen coordinate.
+    pub fn surface_at(&self, px: u16, py: u16, x: u16, y: u16, w: u16, h: u16) -> Option<Uuid> {
+        match self {
+            SplitNode::Leaf { surface_id } => {
+                if px >= x && px < x + w && py >= y && py < y + h {
+                    Some(*surface_id)
+                } else {
+                    None
+                }
+            }
+            SplitNode::Split { direction, ratio, first, second } => {
+                match direction {
+                    Direction::Vertical => {
+                        let first_w = (w as f64 * ratio) as u16;
+                        first.surface_at(px, py, x, y, first_w, h)
+                            .or_else(|| second.surface_at(px, py, x + first_w, y, w - first_w, h))
+                    }
+                    Direction::Horizontal => {
+                        let first_h = (h as f64 * ratio) as u16;
+                        first.surface_at(px, py, x, y, w, first_h)
+                            .or_else(|| second.surface_at(px, py, x, y + first_h, w, h - first_h))
+                    }
+                }
+            }
+        }
+    }
+
+    /// Check if a coordinate hits a split border.
+    /// Returns the path to the split node (for set_ratio_at), the direction,
+    /// and the region (x, y, w, h) of the split node for ratio calculation.
+    pub fn border_hit(&self, px: u16, py: u16, x: u16, y: u16, w: u16, h: u16)
+        -> Option<(Vec<bool>, Direction, u16, u16, u16, u16)>
+    {
+        match self {
+            SplitNode::Leaf { .. } => None,
+            SplitNode::Split { direction, ratio, first, second } => {
+                match direction {
+                    Direction::Vertical => {
+                        let first_w = (w as f64 * ratio) as u16;
+                        let border_x = x + first_w;
+                        if py >= y && py < y + h && (px == border_x || px + 1 == border_x) {
+                            return Some((vec![], *direction, x, y, w, h));
+                        }
+                        if let Some((mut path, dir, rx, ry, rw, rh)) = first.border_hit(px, py, x, y, first_w, h) {
+                            path.insert(0, false);
+                            return Some((path, dir, rx, ry, rw, rh));
+                        }
+                        if let Some((mut path, dir, rx, ry, rw, rh)) = second.border_hit(px, py, x + first_w, y, w - first_w, h) {
+                            path.insert(0, true);
+                            return Some((path, dir, rx, ry, rw, rh));
+                        }
+                        None
+                    }
+                    Direction::Horizontal => {
+                        let first_h = (h as f64 * ratio) as u16;
+                        let border_y = y + first_h;
+                        if px >= x && px < x + w && (py == border_y || py + 1 == border_y) {
+                            return Some((vec![], *direction, x, y, w, h));
+                        }
+                        if let Some((mut path, dir, rx, ry, rw, rh)) = first.border_hit(px, py, x, y, w, first_h) {
+                            path.insert(0, false);
+                            return Some((path, dir, rx, ry, rw, rh));
+                        }
+                        if let Some((mut path, dir, rx, ry, rw, rh)) = second.border_hit(px, py, x, y + first_h, w, h - first_h) {
+                            path.insert(0, true);
+                            return Some((path, dir, rx, ry, rw, rh));
+                        }
+                        None
+                    }
+                }
+            }
+        }
+    }
+
+    /// Navigate to a split node by path and set its ratio.
+    pub fn set_ratio_at(&mut self, path: &[bool], new_ratio: f64) {
+        match self {
+            SplitNode::Split { ratio, first, second, .. } => {
+                if path.is_empty() {
+                    *ratio = new_ratio.clamp(0.1, 0.9);
+                } else if path[0] {
+                    second.set_ratio_at(&path[1..], new_ratio);
+                } else {
+                    first.set_ratio_at(&path[1..], new_ratio);
+                }
+            }
+            _ => {}
+        }
+    }
 }

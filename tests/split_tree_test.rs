@@ -299,3 +299,134 @@ fn surface_ids_order_matches_layout_order() {
     let layout_ids: Vec<Uuid> = layouts.iter().map(|l| l.surface_id).collect();
     assert_eq!(ids, layout_ids);
 }
+
+// === Mouse hit-test ===
+
+#[test]
+fn surface_at_single_leaf() {
+    let id = Uuid::new_v4();
+    let node = SplitNode::Leaf { surface_id: id };
+    assert_eq!(node.surface_at(10, 5, 0, 0, 120, 40), Some(id));
+    assert_eq!(node.surface_at(200, 5, 0, 0, 120, 40), None); // outside
+}
+
+#[test]
+fn surface_at_vertical_split() {
+    let id1 = Uuid::new_v4();
+    let id2 = Uuid::new_v4();
+    let node = SplitNode::Split {
+        direction: Direction::Vertical,
+        ratio: 0.5,
+        first: Box::new(SplitNode::Leaf { surface_id: id1 }),
+        second: Box::new(SplitNode::Leaf { surface_id: id2 }),
+    };
+    // Left half (0..59)
+    assert_eq!(node.surface_at(10, 10, 0, 0, 120, 40), Some(id1));
+    // Right half (60..119)
+    assert_eq!(node.surface_at(80, 10, 0, 0, 120, 40), Some(id2));
+}
+
+#[test]
+fn surface_at_nested_split() {
+    let id1 = Uuid::new_v4();
+    let id2 = Uuid::new_v4();
+    let id3 = Uuid::new_v4();
+    let node = SplitNode::Split {
+        direction: Direction::Vertical,
+        ratio: 0.5,
+        first: Box::new(SplitNode::Leaf { surface_id: id1 }),
+        second: Box::new(SplitNode::Split {
+            direction: Direction::Horizontal,
+            ratio: 0.5,
+            first: Box::new(SplitNode::Leaf { surface_id: id2 }),
+            second: Box::new(SplitNode::Leaf { surface_id: id3 }),
+        }),
+    };
+    assert_eq!(node.surface_at(10, 10, 0, 0, 120, 40), Some(id1));  // left
+    assert_eq!(node.surface_at(80, 5, 0, 0, 120, 40), Some(id2));   // top-right
+    assert_eq!(node.surface_at(80, 30, 0, 0, 120, 40), Some(id3));  // bottom-right
+}
+
+#[test]
+fn border_hit_vertical() {
+    let id1 = Uuid::new_v4();
+    let id2 = Uuid::new_v4();
+    let node = SplitNode::Split {
+        direction: Direction::Vertical,
+        ratio: 0.5,
+        first: Box::new(SplitNode::Leaf { surface_id: id1 }),
+        second: Box::new(SplitNode::Leaf { surface_id: id2 }),
+    };
+    // Border at x=60 for 120-wide split
+    let hit = node.border_hit(60, 10, 0, 0, 120, 40);
+    assert!(hit.is_some());
+    let (path, dir, _, _, _, _) = hit.unwrap();
+    assert!(path.is_empty()); // root split
+    assert_eq!(dir, Direction::Vertical);
+}
+
+#[test]
+fn border_hit_horizontal() {
+    let id1 = Uuid::new_v4();
+    let id2 = Uuid::new_v4();
+    let node = SplitNode::Split {
+        direction: Direction::Horizontal,
+        ratio: 0.5,
+        first: Box::new(SplitNode::Leaf { surface_id: id1 }),
+        second: Box::new(SplitNode::Leaf { surface_id: id2 }),
+    };
+    // Border at y=20 for 40-high split
+    let hit = node.border_hit(10, 20, 0, 0, 120, 40);
+    assert!(hit.is_some());
+    let (_, dir, _, _, _, _) = hit.unwrap();
+    assert_eq!(dir, Direction::Horizontal);
+}
+
+#[test]
+fn border_hit_miss() {
+    let id1 = Uuid::new_v4();
+    let id2 = Uuid::new_v4();
+    let node = SplitNode::Split {
+        direction: Direction::Vertical,
+        ratio: 0.5,
+        first: Box::new(SplitNode::Leaf { surface_id: id1 }),
+        second: Box::new(SplitNode::Leaf { surface_id: id2 }),
+    };
+    // Click well inside a pane, not on border
+    assert!(node.border_hit(10, 10, 0, 0, 120, 40).is_none());
+}
+
+#[test]
+fn set_ratio_at_root() {
+    let id1 = Uuid::new_v4();
+    let id2 = Uuid::new_v4();
+    let mut node = SplitNode::Split {
+        direction: Direction::Vertical,
+        ratio: 0.5,
+        first: Box::new(SplitNode::Leaf { surface_id: id1 }),
+        second: Box::new(SplitNode::Leaf { surface_id: id2 }),
+    };
+    node.set_ratio_at(&[], 0.7);
+    let layouts = node.layout(0, 0, 100, 40);
+    assert_eq!(layouts[0].width, 70);
+    assert_eq!(layouts[1].width, 30);
+}
+
+#[test]
+fn set_ratio_clamps() {
+    let id1 = Uuid::new_v4();
+    let id2 = Uuid::new_v4();
+    let mut node = SplitNode::Split {
+        direction: Direction::Vertical,
+        ratio: 0.5,
+        first: Box::new(SplitNode::Leaf { surface_id: id1 }),
+        second: Box::new(SplitNode::Leaf { surface_id: id2 }),
+    };
+    node.set_ratio_at(&[], 0.0); // should clamp to 0.1
+    let layouts = node.layout(0, 0, 100, 40);
+    assert_eq!(layouts[0].width, 10);
+
+    node.set_ratio_at(&[], 1.0); // should clamp to 0.9
+    let layouts = node.layout(0, 0, 100, 40);
+    assert_eq!(layouts[0].width, 90);
+}

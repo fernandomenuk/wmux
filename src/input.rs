@@ -1,4 +1,4 @@
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseEvent, MouseEventKind, MouseButton};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Action {
@@ -115,4 +115,31 @@ pub fn key_event_to_bytes(key: &KeyEvent) -> Option<Vec<u8>> {
         }
         _ => None,
     }
+}
+
+/// Convert a crossterm MouseEvent to SGR-encoded escape bytes for PTY passthrough.
+/// Coordinates are relative to the surface (0-indexed), converted to 1-indexed for SGR.
+pub fn mouse_event_to_sgr_bytes(event: &MouseEvent, rel_col: u16, rel_row: u16) -> Option<Vec<u8>> {
+    let (button_code, is_release) = match event.kind {
+        MouseEventKind::Down(MouseButton::Left) => (0, false),
+        MouseEventKind::Down(MouseButton::Middle) => (1, false),
+        MouseEventKind::Down(MouseButton::Right) => (2, false),
+        MouseEventKind::Up(MouseButton::Left) => (0, true),
+        MouseEventKind::Up(MouseButton::Middle) => (1, true),
+        MouseEventKind::Up(MouseButton::Right) => (2, true),
+        MouseEventKind::Drag(MouseButton::Left) => (32, false),
+        MouseEventKind::Drag(MouseButton::Middle) => (33, false),
+        MouseEventKind::Drag(MouseButton::Right) => (34, false),
+        MouseEventKind::Moved => (35, false),
+        MouseEventKind::ScrollUp => (64, false),
+        MouseEventKind::ScrollDown => (65, false),
+        _ => return None,
+    };
+
+    // SGR format: \x1b[<button;col;rowM (press) or \x1b[<button;col;rowm (release)
+    let terminator = if is_release { 'm' } else { 'M' };
+    let col_1 = rel_col + 1;
+    let row_1 = rel_row + 1;
+
+    Some(format!("\x1b[<{};{};{}{}", button_code, col_1, row_1, terminator).into_bytes())
 }

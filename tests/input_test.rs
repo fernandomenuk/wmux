@@ -1,5 +1,5 @@
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, KeyEventKind, KeyEventState};
-use wmux::input::{Action, InputHandler, key_event_to_bytes};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, KeyEventKind, KeyEventState, MouseEvent, MouseEventKind, MouseButton};
+use wmux::input::{Action, InputHandler, key_event_to_bytes, mouse_event_to_sgr_bytes};
 
 fn key(code: KeyCode) -> KeyEvent {
     KeyEvent::new(code, KeyModifiers::NONE)
@@ -223,4 +223,62 @@ fn unicode_char_to_bytes() {
 fn unknown_key_returns_none() {
     let bytes = key_event_to_bytes(&key(KeyCode::PrintScreen));
     assert!(bytes.is_none());
+}
+
+// === Mouse SGR encoding ===
+
+fn mouse(kind: MouseEventKind, col: u16, row: u16) -> MouseEvent {
+    MouseEvent { kind, column: col, row, modifiers: KeyModifiers::NONE }
+}
+
+#[test]
+fn mouse_sgr_left_click() {
+    let ev = mouse(MouseEventKind::Down(MouseButton::Left), 5, 10);
+    let bytes = mouse_event_to_sgr_bytes(&ev, 3, 8).unwrap();
+    // SGR: \x1b[<0;4;9M  (0=left, 1-indexed coords)
+    assert_eq!(bytes, b"\x1b[<0;4;9M");
+}
+
+#[test]
+fn mouse_sgr_release() {
+    let ev = mouse(MouseEventKind::Up(MouseButton::Left), 5, 10);
+    let bytes = mouse_event_to_sgr_bytes(&ev, 3, 8).unwrap();
+    // Release uses lowercase 'm'
+    assert_eq!(bytes, b"\x1b[<0;4;9m");
+}
+
+#[test]
+fn mouse_sgr_right_click() {
+    let ev = mouse(MouseEventKind::Down(MouseButton::Right), 0, 0);
+    let bytes = mouse_event_to_sgr_bytes(&ev, 0, 0).unwrap();
+    assert_eq!(bytes, b"\x1b[<2;1;1M");
+}
+
+#[test]
+fn mouse_sgr_scroll_up() {
+    let ev = mouse(MouseEventKind::ScrollUp, 5, 5);
+    let bytes = mouse_event_to_sgr_bytes(&ev, 5, 5).unwrap();
+    assert_eq!(bytes, b"\x1b[<64;6;6M");
+}
+
+#[test]
+fn mouse_sgr_scroll_down() {
+    let ev = mouse(MouseEventKind::ScrollDown, 5, 5);
+    let bytes = mouse_event_to_sgr_bytes(&ev, 5, 5).unwrap();
+    assert_eq!(bytes, b"\x1b[<65;6;6M");
+}
+
+#[test]
+fn mouse_sgr_drag() {
+    let ev = mouse(MouseEventKind::Drag(MouseButton::Left), 10, 10);
+    let bytes = mouse_event_to_sgr_bytes(&ev, 10, 10).unwrap();
+    assert_eq!(bytes, b"\x1b[<32;11;11M");
+}
+
+#[test]
+fn mouse_sgr_coordinates_1_indexed() {
+    let ev = mouse(MouseEventKind::Down(MouseButton::Left), 0, 0);
+    let bytes = mouse_event_to_sgr_bytes(&ev, 0, 0).unwrap();
+    // 0,0 relative → 1,1 in SGR
+    assert_eq!(bytes, b"\x1b[<0;1;1M");
 }

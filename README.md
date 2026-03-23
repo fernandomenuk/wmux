@@ -225,7 +225,7 @@ The event loop multiplexes keyboard input, PTY output, socket commands, and rend
 - [x] JSON-RPC socket API (cmux-compatible)
 - [x] Zoom mode
 - [x] Shell exit detection
-- [ ] Mouse support (click to focus, drag to resize)
+- [x] Mouse support (click to focus, drag to resize, passthrough to apps)
 - [ ] Configuration file
 - [ ] CLI subcommands (`wmux list`, `wmux send-text`)
 - [ ] Session persistence (detach/reattach)

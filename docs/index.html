@@ -445,12 +445,11 @@
   <!-- Hero -->
   <section id="hero">
     <div class="container hero">
-      <div class="hero-badge"><span>v0.3.0</span> Desktop App + CLI</div>
+      <div class="hero-badge"><span>v0.4.0</span> Native Desktop App</div>
       <h1>tmux for Windows.<br>Finally.</h1>
-      <p class="hero-subtitle">Split panes. Tabbed workspaces. A socket API for AI agents. One binary. Zero dependencies.</p>
+      <p class="hero-subtitle">Split panes. Tabbed workspaces. A socket API for AI agents. A high-performance desktop app built with Rust and Tauri.</p>
       <div class="hero-cta">
-        <a href="https://github.com/fernandomenuk/wmux/releases/latest/download/wmux-app.exe" class="btn btn-primary">Download App</a>
-        <a href="https://github.com/fernandomenuk/wmux/releases/latest/download/wmux.exe" class="btn btn-ghost">Download CLI</a>
+        <a href="https://github.com/fernandomenuk/wmux/releases/latest/download/wmux.exe" class="btn btn-primary">Download wmux</a>
         <a href="https://github.com/fernandomenuk/wmux" class="btn btn-ghost">View on GitHub</a>
       </div>
     </div>
@@ -460,39 +459,39 @@
   <section id="features">
     <div class="container">
       <div class="features-header fade-in">
-        <h2>Everything you need</h2>
-        <p>A real terminal multiplexer, built natively for Windows.</p>
+        <h2>Modern Terminal Management</h2>
+        <p>A native Windows application designed for power users and AI agents alike.</p>
       </div>
       <div class="features-grid fade-in">
         <div class="feature-card">
           <div class="feature-icon">&#9638;</div>
-          <h3>Split Panes</h3>
-          <p>Vertical and horizontal, infinitely nestable.</p>
+          <h3>Graphical Splits</h3>
+          <p>Native vertical and horizontal splits with high-DPI support.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">&#9783;</div>
-          <h3>Tabbed Workspaces</h3>
-          <p>Switch contexts without losing your place.</p>
+          <h3>Workspace Sidebar</h3>
+          <p>Organize your tasks into workspaces and switch instantly.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">&#123;&#125;</div>
-          <h3>Socket API</h3>
-          <p>JSON-RPC over named pipes. AI agents can control terminals programmatically.</p>
+          <h3>AI-Ready API</h3>
+          <p>JSON-RPC over named pipes. Let your AI agent manage your environment.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">&#62;_</div>
           <h3>Any Shell</h3>
-          <p>PowerShell, cmd, WSL bash, nushell — whatever you use.</p>
+          <p>Integrated support for PowerShell, CMD, WSL, and more.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon">&#9906;</div>
-          <h3>Mouse Support</h3>
-          <p>Click to focus, drag to resize, passthrough to apps.</p>
+          <div class="feature-icon">&#127912;</div>
+          <h3>Custom Themes</h3>
+          <p>A beautiful, modern UI that follows your system's dark/light mode.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">&#9632;</div>
-          <h3>Windows Native</h3>
-          <p>Built on ConPTY. Works in Windows Terminal, conhost, or any emulator.</p>
+          <h3>Blazing Fast</h3>
+          <p>Built with Rust for near-zero overhead and maximum reliability.</p>
         </div>
       </div>
     </div>
@@ -501,9 +500,9 @@
   <!-- Demo -->
   <section id="demo">
     <div class="container">
-      <div class="terminal fade-in" aria-label="Terminal demo showing wmux with split panes">
+      <div class="terminal fade-in" aria-label="wmux Desktop App Demo">
         <div class="terminal-titlebar">
-          <span class="terminal-titlebar-label">wmux</span>
+          <span class="terminal-titlebar-label">wmux Desktop</span>
           <div class="terminal-controls">
             <span></span>
             <span></span>
@@ -511,8 +510,9 @@
           </div>
         </div>
         <div class="terminal-tabs">
-          <div class="terminal-tab active">1:code</div>
-          <div class="terminal-tab">2:tests</div>
+          <div class="terminal-tab active">Project Alpha</div>
+          <div class="terminal-tab">Dev Server</div>
+          <div class="terminal-tab">DB Logs</div>
         </div>
         <div class="terminal-body">
           <div class="terminal-pane"><pre><span class="t-prompt">~/wmux $</span> ls
@@ -549,29 +549,21 @@ nothing to commit, working tree clean
     <div class="container">
       <div class="quickstart-header fade-in">
         <h2>Get started in seconds</h2>
-        <p>Clone, build, run. That's it.</p>
+        <p>Download the installer or build it from source.</p>
       </div>
-      <pre class="code-block fade-in"><span class="t-muted">$</span> git clone https://github.com/fernandomenuk/wmux.git
-<span class="t-muted">$</span> cd wmux
-<span class="t-muted">$</span> cargo build --release
-<span class="t-muted">$</span> ./target/release/wmux.exe</pre>
-      <div class="fade-in">
-        <table class="keybindings-table">
-          <thead>
-            <tr><th>Keys</th><th>Action</th></tr>
-          </thead>
-          <tbody>
-            <tr><td><kbd>Ctrl+A</kbd> <kbd>|</kbd></td><td>Split vertical</td></tr>
-            <tr><td><kbd>Ctrl+A</kbd> <kbd>-</kbd></td><td>Split horizontal</td></tr>
-            <tr><td><kbd>Ctrl+A</kbd> <kbd>Arrow</kbd></td><td>Move focus</td></tr>
-            <tr><td><kbd>Ctrl+A</kbd> <kbd>x</kbd></td><td>Close pane</td></tr>
-            <tr><td><kbd>Ctrl+A</kbd> <kbd>z</kbd></td><td>Toggle zoom</td></tr>
-            <tr><td><kbd>Ctrl+A</kbd> <kbd>c</kbd></td><td>New workspace</td></tr>
-            <tr><td><kbd>Ctrl+A</kbd> <kbd>n/p</kbd></td><td>Next / prev workspace</td></tr>
-            <tr><td><kbd>Ctrl+A</kbd> <kbd>1-9</kbd></td><td>Jump to workspace</td></tr>
-            <tr><td><kbd>Ctrl+A</kbd> <kbd>q</kbd></td><td>Quit</td></tr>
-          </tbody>
-        </table>
+      <div class="code-block fade-in" style="text-align: center;">
+        <p style="margin-bottom: 1rem; color: var(--accent); font-weight: 600;">Download the Latest Release</p>
+        <a href="https://github.com/fernandomenuk/wmux/releases" style="color: var(--fg); text-decoration: underline;">GitHub Releases →</a>
+      </div>
+      <div class="quickstart-header fade-in" style="margin-top: 4rem;">
+        <p>Or build with Cargo:</p>
+      </div>
+      <pre class="code-block fade-in"><span class="t-muted">$</span> cargo install tauri-cli
+<span class="t-muted">$</span> git clone https://github.com/fernandomenuk/wmux.git
+<span class="t-muted">$</span> cd wmux/crates/wmux-app
+<span class="t-muted">$</span> cargo tauri build</pre>
+      <div class="fade-in" style="text-align: center; margin-top: 2rem;">
+        <p style="font-size: 0.8rem; color: var(--muted);">Looking for the CLI? The <code>wmux-cli</code> project has been archived in favor of the desktop experience.</p>
       </div>
     </div>
   </section>

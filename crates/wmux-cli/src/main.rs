@@ -1,7 +1,7 @@
 use clap::Parser;
 use tokio::sync::mpsc;
 
-mod app;
+mod event_loop;
 mod input;
 mod model;
 mod socket;
@@ -48,7 +48,7 @@ async fn main() {
         }
     }
 
-    let (socket_tx, socket_rx) = mpsc::unbounded_channel::<app::SocketRequest>();
+    let (socket_tx, socket_rx) = mpsc::unbounded_channel::<event_loop::SocketRequest>();
 
     let pipe_path = args.pipe.clone();
     let socket_tx_clone = socket_tx.clone();
@@ -61,8 +61,8 @@ async fn main() {
         }
     });
 
-    if let Err(e) = app::run(args.shell, args.pipe, socket_rx, socket_tx).await {
-        // Terminal cleanup already happened inside app::run
+    if let Err(e) = event_loop::run(args.shell, args.pipe, socket_rx, socket_tx).await {
+        // Terminal cleanup already happened inside event_loop::run
         eprintln!("error: {}", e);
         std::process::exit(1);
     }

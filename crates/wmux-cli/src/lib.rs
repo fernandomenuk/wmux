@@ -1,4 +1,4 @@
-pub mod app;
+pub mod event_loop;
 pub mod input;
 pub mod model;
 pub mod socket;

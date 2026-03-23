@@ -1,7 +1,7 @@
 use tokio::sync::mpsc;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::windows::named_pipe::ServerOptions;
-use crate::app::SocketRequest;
+use crate::event_loop::SocketRequest;
 use crate::socket::protocol::{Request, Response};
 
 pub async fn start_pipe_server(

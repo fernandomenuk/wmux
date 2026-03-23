@@ -10,96 +10,432 @@
   <meta property="og:type" content="website">
   <title>wmux — tmux for Windows</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
-      * { transition: none !important; }
+      *, *::before, *::after { transition: none !important; animation: none !important; }
     }
-    :root {
-      --bg: #0a0a0a;
-      --fg: #fafafa;
-      --muted: #888;
-      --accent: #3B82F6;
-      --border: #222;
-      --card-border: #333;
-      --mono: 'Cascadia Code', 'Fira Code', 'SF Mono', 'Consolas', monospace;
-    }
-    body { background: var(--bg); color: var(--fg); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.5; }
-    .container { max-width: 960px; margin: 0 auto; padding: 0 1.5rem; }
-    section { padding: 5rem 0; }
-    #hero { padding: 0; }
-    .section-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 2rem; }
 
-    /* Hero */
-    .hero { text-align: center; padding: 8rem 0 5rem; }
-    .hero-logo { font-family: var(--mono); font-size: 1.25rem; font-weight: 700; letter-spacing: 0.15em; color: var(--accent); margin-bottom: 1.5rem; }
-    h1 { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 1.5rem; }
-    .hero-subtitle { font-size: 1.125rem; color: var(--muted); max-width: 540px; margin: 0 auto 2.5rem; }
+    :root {
+      --bg: #09090b;
+      --bg-subtle: #111113;
+      --fg: #fafafa;
+      --fg-secondary: #a1a1aa;
+      --muted: #71717a;
+      --accent: #a78bfa;
+      --accent-hover: #c4b5fd;
+      --accent-glow: rgba(167, 139, 250, 0.15);
+      --border: rgba(255, 255, 255, 0.06);
+      --border-hover: rgba(255, 255, 255, 0.12);
+      --card-bg: rgba(255, 255, 255, 0.03);
+      --card-bg-hover: rgba(255, 255, 255, 0.06);
+      --mono: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--sans);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .container { max-width: 1080px; margin: 0 auto; padding: 0 2rem; }
+    section { padding: 6rem 0; }
+
+    /* Fade-in on scroll */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── Hero ── */
+    #hero {
+      padding: 0;
+      position: relative;
+      overflow: hidden;
+    }
+    #hero::before {
+      content: '';
+      position: absolute;
+      top: -40%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .hero {
+      text-align: center;
+      padding: 10rem 0 6rem;
+      position: relative;
+      z-index: 1;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 1rem;
+      border-radius: 100px;
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+      font-size: 0.8rem;
+      color: var(--fg-secondary);
+      margin-bottom: 2.5rem;
+      letter-spacing: 0.02em;
+    }
+    .hero-badge span { color: var(--accent); font-weight: 600; }
+    h1 {
+      font-size: clamp(2.75rem, 7vw, 4.5rem);
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      line-height: 1.05;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(to bottom, #fff 30%, var(--fg-secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-subtitle {
+      font-size: 1.2rem;
+      color: var(--muted);
+      max-width: 520px;
+      margin: 0 auto 3rem;
+      line-height: 1.7;
+    }
     .hero-cta { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
-    .btn { display: inline-block; padding: 0.75rem 2rem; border-radius: 6px; font-size: 0.95rem; font-weight: 600; text-decoration: none; transition: all 0.2s; }
-    .btn-primary { background: var(--accent); color: #fff; }
-    .btn-primary:hover { background: #2563EB; }
-    .btn-ghost { border: 1px solid var(--card-border); color: var(--fg); }
-    .btn-ghost:hover { border-color: var(--fg); }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.85rem 2rem;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      font-family: var(--sans);
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #0a0a0a;
+      box-shadow: 0 0 20px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      box-shadow: 0 0 30px rgba(167, 139, 250, 0.25), inset 0 1px 0 rgba(255,255,255,0.2);
+      transform: translateY(-1px);
+    }
+    .btn-ghost {
+      border: 1px solid var(--border-hover);
+      color: var(--fg-secondary);
+      background: var(--card-bg);
+    }
+    .btn-ghost:hover {
+      border-color: rgba(255,255,255,0.2);
+      color: var(--fg);
+      background: var(--card-bg-hover);
+    }
     .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-    /* Features */
-    .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
-    @media (max-width: 768px) { .features-grid { grid-template-columns: 1fr; } }
-    .feature-card { border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; transition: border-color 0.2s; }
-    .feature-card:hover { border-color: var(--card-border); }
-    .feature-card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
-    .feature-card p { font-size: 0.9rem; color: var(--muted); line-height: 1.5; }
+    /* ── Features ── */
+    .features-header {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+    .features-header h2 {
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 1rem;
+    }
+    .features-header p {
+      color: var(--muted);
+      font-size: 1.1rem;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    @media (max-width: 768px) {
+      .features-grid { grid-template-columns: 1fr; }
+    }
+    .feature-card {
+      padding: 2rem;
+      background: var(--bg);
+      transition: background 0.3s ease;
+    }
+    .feature-card:hover { background: var(--bg-subtle); }
+    .feature-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--accent-glow);
+      border: 1px solid rgba(167, 139, 250, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.25rem;
+      font-size: 1.1rem;
+    }
+    .feature-card h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .feature-card p {
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
 
-    /* Terminal Demo */
-    .terminal { border: 1px solid var(--card-border); border-radius: 10px; overflow: hidden; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5); max-width: 800px; margin: 0 auto; }
-    .terminal-titlebar { background: #1a1a1a; padding: 0.5rem 1rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; color: var(--muted); }
-    .terminal-controls { display: flex; gap: 0.75rem; color: var(--muted); font-size: 0.75rem; }
-    .terminal-tabs { background: #111; padding: 0.25rem 1rem; display: flex; gap: 0; font-family: var(--mono); font-size: 0.75rem; }
-    .terminal-tab { padding: 0.25rem 1rem; color: var(--muted); border-bottom: 2px solid transparent; }
-    .terminal-tab.active { color: var(--fg); border-bottom-color: var(--accent); }
-    .terminal-body { display: grid; grid-template-columns: 1.2fr 1fr; min-height: 280px; background: #0d0d0d; }
-    .terminal-pane { padding: 0.75rem; font-family: var(--mono); font-size: 0.7rem; line-height: 1.6; overflow: hidden; border-right: 1px solid var(--border); }
+    /* ── Terminal Demo ── */
+    #demo { padding: 4rem 0 6rem; }
+    .terminal {
+      border: 1px solid var(--border-hover);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.8), 0 0 60px var(--accent-glow);
+      max-width: 860px;
+      margin: 0 auto;
+      background: var(--bg-subtle);
+    }
+    .terminal-titlebar {
+      background: rgba(255,255,255,0.03);
+      padding: 0.75rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .terminal-titlebar-label {
+      font-family: var(--mono);
+      font-weight: 600;
+      color: var(--fg-secondary);
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+    }
+    .terminal-controls { display: flex; gap: 0.5rem; }
+    .terminal-controls span {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+      display: block;
+      font-size: 0;
+    }
+    .terminal-tabs {
+      background: rgba(0,0,0,0.3);
+      padding: 0;
+      display: flex;
+      gap: 0;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .terminal-tab {
+      padding: 0.5rem 1.25rem;
+      color: var(--muted);
+      border-right: 1px solid var(--border);
+      transition: all 0.2s;
+    }
+    .terminal-tab.active {
+      color: var(--fg);
+      background: rgba(255,255,255,0.03);
+      box-shadow: inset 0 -2px 0 var(--accent);
+    }
+    .terminal-body {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      min-height: 300px;
+      background: var(--bg);
+    }
+    .terminal-pane {
+      padding: 1rem;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      line-height: 1.7;
+      overflow: hidden;
+      border-right: 1px solid var(--border);
+      color: var(--fg-secondary);
+    }
     .terminal-pane:last-child { border-right: none; }
     .terminal-pane-split { display: flex; flex-direction: column; }
     .terminal-pane-split .terminal-pane { border-right: none; border-bottom: 1px solid var(--border); }
     .terminal-pane-split .terminal-pane:last-child { border-bottom: none; }
     .t-green { color: #4ade80; }
-    .t-yellow { color: #facc15; }
+    .t-yellow { color: #fbbf24; }
     .t-blue { color: #60a5fa; }
-    .t-muted { color: #555; }
+    .t-muted { color: #3f3f46; }
     .t-prompt { color: var(--accent); }
-    @media (max-width: 768px) { .terminal-body { grid-template-columns: 1fr; } .terminal { font-size: 0.65rem; } }
+    @media (max-width: 768px) {
+      .terminal-body { grid-template-columns: 1fr; }
+    }
 
-    /* Quick Start */
-    .code-block { background: #111; border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; font-family: var(--mono); font-size: 0.85rem; line-height: 1.8; overflow-x: auto; margin-bottom: 3rem; }
+    /* ── Quick Start ── */
+    .quickstart-header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    .quickstart-header h2 {
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 1rem;
+    }
+    .quickstart-header p {
+      color: var(--muted);
+      font-size: 1.05rem;
+    }
+    .code-block {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.75rem 2rem;
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      line-height: 2;
+      overflow-x: auto;
+      margin-bottom: 4rem;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
     .code-block .t-muted { user-select: none; }
-    .keybindings-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-    .keybindings-table th, .keybindings-table td { text-align: left; padding: 0.625rem 1rem; border-bottom: 1px solid var(--border); }
-    .keybindings-table th { color: var(--muted); font-weight: 500; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
-    .keybindings-table kbd { font-family: var(--mono); font-size: 0.8rem; background: #1a1a1a; padding: 0.15rem 0.5rem; border-radius: 4px; border: 1px solid var(--border); }
+    .keybindings-table {
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    .keybindings-table th,
+    .keybindings-table td {
+      text-align: left;
+      padding: 0.85rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .keybindings-table th {
+      color: var(--muted);
+      font-weight: 500;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .keybindings-table td { color: var(--fg-secondary); }
+    .keybindings-table kbd {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      background: var(--card-bg-hover);
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      border: 1px solid var(--border-hover);
+      color: var(--fg);
+    }
 
-    /* FAQ */
-    .faq-list { max-width: 640px; }
+    /* ── FAQ ── */
+    .faq-header {
+      text-align: center;
+      margin-bottom: 3.5rem;
+    }
+    .faq-header h2 {
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+    .faq-list { max-width: 640px; margin: 0 auto; }
     .faq-item { border-bottom: 1px solid var(--border); }
-    .faq-item summary { padding: 1.25rem 0; font-weight: 600; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; }
-    .faq-item summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-    .faq-item summary::after { content: '+'; font-size: 1.25rem; color: var(--muted); }
-    .faq-item[open] summary::after { content: '−'; }
-    .faq-item p { padding: 0 0 1.25rem; color: var(--muted); line-height: 1.6; }
-    .faq-item code { font-family: var(--mono); font-size: 0.85em; background: #1a1a1a; padding: 0.1rem 0.4rem; border-radius: 3px; }
+    .faq-item summary {
+      padding: 1.5rem 0;
+      font-weight: 500;
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--fg);
+      transition: color 0.2s;
+    }
+    .faq-item summary:hover { color: var(--accent); }
+    .faq-item summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 4px; }
+    .faq-item summary::after {
+      content: '+';
+      font-size: 1.5rem;
+      font-weight: 300;
+      color: var(--muted);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .faq-item[open] summary::after {
+      content: '\2212';
+      transform: rotate(180deg);
+    }
+    .faq-item p {
+      padding: 0 0 1.5rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .faq-item code {
+      font-family: var(--mono);
+      font-size: 0.8em;
+      background: var(--card-bg-hover);
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
 
-    /* Footer */
-    footer { border-top: 1px solid var(--border); padding: 3rem 0; }
-    .footer { display: flex; flex-direction: column; align-items: center; gap: 1rem; text-align: center; }
-    .footer-logo { font-family: var(--mono); font-weight: 700; letter-spacing: 0.15em; }
-    .footer-links { display: flex; gap: 1.5rem; }
-    .footer-links a { color: var(--muted); text-decoration: none; font-size: 0.85rem; transition: color 0.2s; }
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 4rem 0;
+      margin-top: 2rem;
+    }
+    .footer {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.25rem;
+      text-align: center;
+    }
+    .footer-logo {
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: 1.1rem;
+      letter-spacing: 0.15em;
+      color: var(--fg);
+    }
+    .footer-links { display: flex; gap: 2rem; }
+    .footer-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: color 0.2s;
+    }
     .footer-links a:hover { color: var(--fg); }
-    .footer-links a:focus-visible { color: var(--fg); outline: 1px solid var(--accent); outline-offset: 2px; }
+    .footer-links a:focus-visible { color: var(--fg); outline: 1px solid var(--accent); outline-offset: 4px; border-radius: 2px; }
     .footer-tagline { color: var(--muted); font-size: 0.8rem; }
-    .footer-copyright { color: var(--muted); font-size: 0.75rem; }
+    .footer-copyright { color: rgba(255,255,255,0.2); font-size: 0.75rem; }
   </style>
 </head>
 <body>
@@ -109,9 +445,9 @@
   <!-- Hero -->
   <section id="hero">
     <div class="container hero">
-      <div class="hero-logo">wmux</div>
-      <h1>tmux for Windows. Finally.</h1>
-      <p class="hero-subtitle">Split panes. Tabbed workspaces. A socket API for AI agents.<br>One binary. Zero dependencies.</p>
+      <div class="hero-badge"><span>v0.1.0</span> Now available</div>
+      <h1>tmux for Windows.<br>Finally.</h1>
+      <p class="hero-subtitle">Split panes. Tabbed workspaces. A socket API for AI agents. One binary. Zero dependencies.</p>
       <div class="hero-cta">
         <a href="https://github.com/fernandomenuk/wmux/releases" class="btn btn-primary">Download</a>
         <a href="https://github.com/fernandomenuk/wmux" class="btn btn-ghost">View on GitHub</a>
@@ -122,29 +458,38 @@
   <!-- Features -->
   <section id="features">
     <div class="container">
-      <h2 class="section-title">Features</h2>
-      <div class="features-grid">
+      <div class="features-header fade-in">
+        <h2>Everything you need</h2>
+        <p>A real terminal multiplexer, built natively for Windows.</p>
+      </div>
+      <div class="features-grid fade-in">
         <div class="feature-card">
+          <div class="feature-icon">&#9638;</div>
           <h3>Split Panes</h3>
           <p>Vertical and horizontal, infinitely nestable.</p>
         </div>
         <div class="feature-card">
+          <div class="feature-icon">&#9783;</div>
           <h3>Tabbed Workspaces</h3>
           <p>Switch contexts without losing your place.</p>
         </div>
         <div class="feature-card">
+          <div class="feature-icon">&#123;&#125;</div>
           <h3>Socket API</h3>
           <p>JSON-RPC over named pipes. AI agents can control terminals programmatically.</p>
         </div>
         <div class="feature-card">
+          <div class="feature-icon">&#62;_</div>
           <h3>Any Shell</h3>
           <p>PowerShell, cmd, WSL bash, nushell — whatever you use.</p>
         </div>
         <div class="feature-card">
+          <div class="feature-icon">&#9906;</div>
           <h3>Mouse Support</h3>
           <p>Click to focus, drag to resize, passthrough to apps.</p>
         </div>
         <div class="feature-card">
+          <div class="feature-icon">&#9632;</div>
           <h3>Windows Native</h3>
           <p>Built on ConPTY. Works in Windows Terminal, conhost, or any emulator.</p>
         </div>
@@ -155,13 +500,13 @@
   <!-- Demo -->
   <section id="demo">
     <div class="container">
-      <div class="terminal" aria-label="Terminal demo showing wmux with split panes">
+      <div class="terminal fade-in" aria-label="Terminal demo showing wmux with split panes">
         <div class="terminal-titlebar">
-          <span>wmux</span>
+          <span class="terminal-titlebar-label">wmux</span>
           <div class="terminal-controls">
-            <span>&#9472;</span>
-            <span>&#9633;</span>
-            <span>&#10005;</span>
+            <span></span>
+            <span></span>
+            <span></span>
           </div>
         </div>
         <div class="terminal-tabs">
@@ -201,36 +546,42 @@ nothing to commit, working tree clean
   <!-- Quick Start -->
   <section id="quickstart">
     <div class="container">
-      <h2 class="section-title">Quick Start</h2>
-      <pre class="code-block"><span class="t-muted">$</span> git clone https://github.com/fernandomenuk/wmux.git
+      <div class="quickstart-header fade-in">
+        <h2>Get started in seconds</h2>
+        <p>Clone, build, run. That's it.</p>
+      </div>
+      <pre class="code-block fade-in"><span class="t-muted">$</span> git clone https://github.com/fernandomenuk/wmux.git
 <span class="t-muted">$</span> cd wmux
 <span class="t-muted">$</span> cargo build --release
 <span class="t-muted">$</span> ./target/release/wmux.exe</pre>
-      <h2 class="section-title" style="margin-top: 1rem;">Keybindings</h2>
-      <table class="keybindings-table">
-        <thead>
-          <tr><th>Keys</th><th>Action</th></tr>
-        </thead>
-        <tbody>
-          <tr><td><kbd>Ctrl+A</kbd> <kbd>|</kbd></td><td>Split vertical</td></tr>
-          <tr><td><kbd>Ctrl+A</kbd> <kbd>-</kbd></td><td>Split horizontal</td></tr>
-          <tr><td><kbd>Ctrl+A</kbd> <kbd>Arrow</kbd></td><td>Move focus</td></tr>
-          <tr><td><kbd>Ctrl+A</kbd> <kbd>x</kbd></td><td>Close pane</td></tr>
-          <tr><td><kbd>Ctrl+A</kbd> <kbd>z</kbd></td><td>Toggle zoom</td></tr>
-          <tr><td><kbd>Ctrl+A</kbd> <kbd>c</kbd></td><td>New workspace</td></tr>
-          <tr><td><kbd>Ctrl+A</kbd> <kbd>n/p</kbd></td><td>Next / prev workspace</td></tr>
-          <tr><td><kbd>Ctrl+A</kbd> <kbd>1-9</kbd></td><td>Jump to workspace</td></tr>
-          <tr><td><kbd>Ctrl+A</kbd> <kbd>q</kbd></td><td>Quit</td></tr>
-        </tbody>
-      </table>
+      <div class="fade-in">
+        <table class="keybindings-table">
+          <thead>
+            <tr><th>Keys</th><th>Action</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><kbd>Ctrl+A</kbd> <kbd>|</kbd></td><td>Split vertical</td></tr>
+            <tr><td><kbd>Ctrl+A</kbd> <kbd>-</kbd></td><td>Split horizontal</td></tr>
+            <tr><td><kbd>Ctrl+A</kbd> <kbd>Arrow</kbd></td><td>Move focus</td></tr>
+            <tr><td><kbd>Ctrl+A</kbd> <kbd>x</kbd></td><td>Close pane</td></tr>
+            <tr><td><kbd>Ctrl+A</kbd> <kbd>z</kbd></td><td>Toggle zoom</td></tr>
+            <tr><td><kbd>Ctrl+A</kbd> <kbd>c</kbd></td><td>New workspace</td></tr>
+            <tr><td><kbd>Ctrl+A</kbd> <kbd>n/p</kbd></td><td>Next / prev workspace</td></tr>
+            <tr><td><kbd>Ctrl+A</kbd> <kbd>1-9</kbd></td><td>Jump to workspace</td></tr>
+            <tr><td><kbd>Ctrl+A</kbd> <kbd>q</kbd></td><td>Quit</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </section>
 
   <!-- FAQ -->
   <section id="faq">
     <div class="container">
-      <h2 class="section-title">FAQ</h2>
-      <div class="faq-list">
+      <div class="faq-header fade-in">
+        <h2>Frequently asked questions</h2>
+      </div>
+      <div class="faq-list fade-in">
         <details class="faq-item">
           <summary>What shells does wmux support?</summary>
           <p>PowerShell, cmd, WSL bash, nushell, or anything. Set with the <code>--shell</code> flag or <code>WMUX_SHELL</code> environment variable.</p>
@@ -270,6 +621,18 @@ nothing to commit, working tree clean
       <div class="footer-copyright">&copy; 2026 wmux contributors</div>
     </div>
   </footer>
+
+  <script>
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+  </script>
 
 </body>
 </html>

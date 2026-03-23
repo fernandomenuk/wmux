@@ -292,4 +292,37 @@ impl WmuxCore {
             surface.mark_exited(code);
         }
     }
+
+    pub fn rename_workspace(&mut self, index: usize, name: String) {
+        if let Some(ws) = self.workspaces.get_mut(index) {
+            ws.name = name;
+        }
+    }
+
+    pub fn close_workspace(&mut self, index: usize) -> bool {
+        if index < self.workspaces.len() {
+            let ws = self.workspaces.remove(index);
+            // Cleanup surfaces
+            for id in ws.split_tree.surface_ids() {
+                self.surfaces.remove(&id);
+            }
+
+            if self.workspaces.is_empty() {
+                return true;
+            }
+
+            // Adjust active_workspace
+            if self.active_workspace >= self.workspaces.len() {
+                self.active_workspace = self.workspaces.len() - 1;
+            }
+
+            self.focused_surface = Some(
+                self.workspaces[self.active_workspace]
+                    .split_tree
+                    .first_surface(),
+            );
+            self.resize_active_workspace();
+        }
+        false
+    }
 }

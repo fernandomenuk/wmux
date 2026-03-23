@@ -1,7 +1,19 @@
+import { getActiveIndex } from './sidebar.js';
+import { showInputModal } from './modal.js';
+
 const { invoke } = window.__TAURI__.core;
 
 const COMMANDS = [
-  { id: 'new-ws', name: 'New Workspace', hint: 'Create a fresh workspace', action: () => invoke('create_workspace') },
+  { id: 'new-ws', name: 'New Workspace', hint: 'Create a fresh workspace', action: async () => {
+    const name = await showInputModal('Enter workspace name:');
+    if (name !== null) invoke('create_workspace', { name: name || null });
+  }},
+  { id: 'rename-ws', name: 'Rename Workspace', hint: 'Change current workspace name', action: async () => {
+    const idx = getActiveIndex();
+    const currentName = document.querySelector('.tab.active')?.textContent.split(':')[1] || '';
+    const name = await showInputModal('Rename workspace:', currentName);
+    if (name !== null && name !== '') invoke('rename_workspace', { index: idx, name });
+  }},
   { id: 'split-v', name: 'Split Vertical', hint: 'Add pane to the right', action: () => invoke('split_pane', { direction: 'vertical' }) },
   { id: 'split-h', name: 'Split Horizontal', hint: 'Add pane below', action: () => invoke('split_pane', { direction: 'horizontal' }) },
   { id: 'zoom', name: 'Toggle Zoom', hint: 'Fullscreen focused pane', action: () => invoke('toggle_zoom') },

@@ -60,6 +60,7 @@ The app will be available in `target/release/wmux-app.exe`.
 
 ### Modern UI
 - **Sidebar Navigation**: Manage all your workspaces at a glance.
+- **Workspace Controls**: Create, rename, and close workspaces without leaving the keyboard-first flow.
 - **Command Palette**: Quick actions with `Ctrl+Shift+P`.
 - **Customizable Layouts**: Drag and drop support coming soon.
 
@@ -78,6 +79,7 @@ Newline-delimited JSON-RPC. Compatible with [cmux](https://github.com/anthropics
 | Method | Description |
 |--------|-------------|
 | `workspace.create` | Create a new tabbed workspace |
+| `workspace.close` | Close a workspace by ID |
 | `surface.split` | Split the current terminal pane |
 | `surface.send_text` | Send commands to a terminal |
 

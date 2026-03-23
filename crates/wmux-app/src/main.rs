@@ -10,6 +10,8 @@ use uuid::Uuid;
 use wmux_core::terminal::shell::detect_shell;
 use wmux_core::WmuxCore;
 
+mod socket;
+
 /// Shared application state accessible from Tauri commands
 ///
 /// `pty_tx` and `exit_tx` are held here to keep the channel senders alive;
@@ -393,6 +395,31 @@ async fn get_process_metrics(
     }
 }
 
+#[tauri::command]
+async fn rename_workspace(
+    app_handle: tauri::AppHandle,
+    state: tauri::State<'_, Arc<AppState>>,
+    index: usize,
+    name: String,
+) -> Result<(), String> {
+    let mut core = state.core.lock().await;
+    core.rename_workspace(index, name);
+    let _ = app_handle.emit("layout-changed", ());
+    Ok(())
+}
+
+#[tauri::command]
+async fn close_workspace(
+    app_handle: tauri::AppHandle,
+    state: tauri::State<'_, Arc<AppState>>,
+    index: usize,
+) -> Result<CloseResult, String> {
+    let mut core = state.core.lock().await;
+    let should_quit = core.close_workspace(index);
+    let _ = app_handle.emit("layout-changed", ());
+    Ok(CloseResult { should_quit })
+}
+
 // ── App Setup ──
 
 fn main() {
@@ -420,6 +447,16 @@ fn main() {
                 exit_tx,
             });
             app.manage(state.clone());
+
+            // Start Socket API Server (AI Agent support)
+            let socket_handle = app_handle.clone();
+            let socket_state = state.clone();
+            tauri::async_runtime::spawn(async move {
+                let pipe_path = r"\\.\pipe\wmux".to_string();
+                if let Err(e) = socket::server::start_pipe_server(socket_handle, socket_state, pipe_path).await {
+                    eprintln!("Failed to start socket server: {}", e);
+                }
+            });
 
             // Spawn channel-to-event bridge
             let bridge_state = state.clone();
@@ -467,6 +504,8 @@ fn main() {
             get_tab_info,
             toggle_zoom,
             get_process_metrics,
+            rename_workspace,
+            close_workspace,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -15,10 +15,10 @@ pub struct RenderContext<'a> {
     pub layouts: Vec<SurfaceLayout>,
     pub surfaces: &'a HashMap<Uuid, Surface>,
     pub focused_surface: Option<Uuid>,
+    pub zoom_surface: Option<Uuid>,
     pub workspace_index: usize,
     pub shell_name: &'a str,
     pub pipe_path: &'a str,
-    pub content_area: Rect,
 }
 
 pub fn render_frame(f: &mut Frame, ctx: &RenderContext) {
@@ -37,34 +37,49 @@ pub fn render_frame(f: &mut Frame, ctx: &RenderContext) {
     let tab_bar = TabBar { tabs: &ctx.tabs };
     f.render_widget(tab_bar, chunks[0]);
 
-    // Split panes
     let content = chunks[1];
-    for layout in &ctx.layouts {
-        let area = Rect {
-            x: content.x + layout.x,
-            y: content.y + layout.y,
-            width: layout.width.min(content.width.saturating_sub(layout.x)),
-            height: layout.height.min(content.height.saturating_sub(layout.y)),
-        };
 
-        if area.width == 0 || area.height == 0 {
-            continue;
-        }
-
-        let is_focused = ctx.focused_surface == Some(layout.surface_id);
-
-        let border_style = if is_focused {
-            Style::default().fg(Color::Cyan)
-        } else {
-            Style::default().fg(Color::DarkGray)
-        };
+    // If zoomed, render only the zoomed surface fullscreen
+    if let Some(zoom_id) = ctx.zoom_surface {
+        let is_focused = true;
+        let border_style = Style::default().fg(Color::Yellow);
         let block = Block::default().borders(Borders::ALL).border_style(border_style);
-        let inner = block.inner(area);
-        f.render_widget(block, area);
+        let inner = block.inner(content);
+        f.render_widget(block, content);
 
-        if let Some(surface) = ctx.surfaces.get(&layout.surface_id) {
+        if let Some(surface) = ctx.surfaces.get(&zoom_id) {
             let view = SurfaceView::new(surface.screen(), is_focused, surface.exited);
             f.render_widget(view, inner);
+        }
+    } else {
+        // Normal split pane rendering
+        for layout in &ctx.layouts {
+            let area = Rect {
+                x: content.x + layout.x,
+                y: content.y + layout.y,
+                width: layout.width.min(content.width.saturating_sub(layout.x)),
+                height: layout.height.min(content.height.saturating_sub(layout.y)),
+            };
+
+            if area.width == 0 || area.height == 0 {
+                continue;
+            }
+
+            let is_focused = ctx.focused_surface == Some(layout.surface_id);
+
+            let border_style = if is_focused {
+                Style::default().fg(Color::Cyan)
+            } else {
+                Style::default().fg(Color::DarkGray)
+            };
+            let block = Block::default().borders(Borders::ALL).border_style(border_style);
+            let inner = block.inner(area);
+            f.render_widget(block, area);
+
+            if let Some(surface) = ctx.surfaces.get(&layout.surface_id) {
+                let view = SurfaceView::new(surface.screen(), is_focused, surface.exited);
+                f.render_widget(view, inner);
+            }
         }
     }
 

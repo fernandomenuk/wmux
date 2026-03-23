@@ -28,6 +28,7 @@ pub struct App {
     pub pipe_path: String,
     pub zoom_surface: Option<Uuid>,
     pub should_quit: bool,
+    pub terminal_size: (u16, u16),
 }
 
 impl App {
@@ -41,6 +42,7 @@ impl App {
             pipe_path,
             zoom_surface: None,
             should_quit: false,
+            terminal_size: (80, 24),
         }
     }
 
@@ -48,12 +50,13 @@ impl App {
         &mut self,
         name: Option<String>,
         pty_tx: &mpsc::UnboundedSender<(Uuid, Vec<u8>)>,
+        exit_tx: &mpsc::UnboundedSender<Uuid>,
         cols: u16,
         rows: u16,
     ) -> Result<Uuid, Box<dyn std::error::Error>> {
         let surface_id = Uuid::new_v4();
         let pty = spawn_pty(&self.shell, cols, rows, None)?;
-        start_pty_reader(surface_id, pty.master.as_ref(), pty_tx.clone())?;
+        start_pty_reader(surface_id, pty.master.as_ref(), pty_tx.clone(), exit_tx.clone())?;
 
         let surface = Surface::new(surface_id, self.shell.clone(), cols, rows, pty);
         self.surfaces.insert(surface_id, surface);
@@ -72,6 +75,7 @@ impl App {
         &mut self,
         direction: Direction,
         pty_tx: &mpsc::UnboundedSender<(Uuid, Vec<u8>)>,
+        exit_tx: &mpsc::UnboundedSender<Uuid>,
         cols: u16,
         rows: u16,
     ) -> Result<Option<Uuid>, Box<dyn std::error::Error>> {
@@ -82,7 +86,7 @@ impl App {
 
         let new_id = Uuid::new_v4();
         let pty = spawn_pty(&self.shell, cols, rows, None)?;
-        start_pty_reader(new_id, pty.master.as_ref(), pty_tx.clone())?;
+        start_pty_reader(new_id, pty.master.as_ref(), pty_tx.clone(), exit_tx.clone())?;
 
         let surface = Surface::new(new_id, self.shell.clone(), cols, rows, pty);
         self.surfaces.insert(new_id, surface);
@@ -130,6 +134,19 @@ impl App {
     pub fn active_workspace_ref(&self) -> Option<&Workspace> {
         self.workspaces.get(self.active_workspace)
     }
+
+    /// Resize all surfaces in the active workspace to match current terminal size.
+    pub fn resize_active_workspace(&mut self) {
+        let (w, h) = self.terminal_size;
+        if let Some(ws) = self.workspaces.get(self.active_workspace) {
+            let layouts = ws.split_tree.layout(0, 0, w, h);
+            for layout in &layouts {
+                if let Some(surface) = self.surfaces.get_mut(&layout.surface_id) {
+                    surface.resize(layout.width.saturating_sub(2), layout.height.saturating_sub(2));
+                }
+            }
+        }
+    }
 }
 
 pub struct SocketRequest {
@@ -155,10 +172,12 @@ pub async fn run(
     let mut input_handler = InputHandler::new();
 
     let (pty_tx, mut pty_rx) = mpsc::unbounded_channel::<(Uuid, Vec<u8>)>();
+    let (exit_tx, mut exit_rx) = mpsc::unbounded_channel::<Uuid>();
 
     let size = terminal.size()?;
     let content_height = size.height.saturating_sub(2);
-    app.create_workspace(None, &pty_tx, size.width, content_height)?;
+    app.terminal_size = (size.width, content_height);
+    app.create_workspace(None, &pty_tx, &exit_tx, size.width, content_height)?;
 
     let (input_tx, mut input_rx) = mpsc::unbounded_channel::<Event>();
     std::thread::spawn(move || {
@@ -182,13 +201,14 @@ pub async fn run(
                 match ev {
                     Event::Key(key) if key.kind == KeyEventKind::Press => {
                         let action = input_handler.handle_key(key);
-                        handle_action(&mut app, action, &pty_tx, &terminal)?;
+                        handle_action(&mut app, action, &pty_tx, &exit_tx, &terminal)?;
                         if app.should_quit {
                             break;
                         }
                     }
                     Event::Resize(w, h) => {
                         let content_h = h.saturating_sub(2);
+                        app.terminal_size = (w, content_h);
                         if let Some(ws) = app.active_workspace_ref() {
                             let layouts = ws.split_tree.layout(0, 0, w, content_h);
                             for layout in &layouts {
@@ -208,8 +228,19 @@ pub async fn run(
                 }
             }
 
+            Some(surface_id) = exit_rx.recv() => {
+                if let Some(surface) = app.surfaces.get_mut(&surface_id) {
+                    // Try to get exit code from child process
+                    let code = surface.pty.as_mut()
+                        .and_then(|pty| pty.child.try_wait().ok().flatten())
+                        .map(|status| status.exit_code() as i32)
+                        .unwrap_or(0);
+                    surface.mark_exited(code);
+                }
+            }
+
             Some(req) = socket_rx.recv() => {
-                let response = crate::socket::commands::dispatch(&mut app, &req.request, &pty_tx);
+                let response = crate::socket::commands::dispatch(&mut app, &req.request, &pty_tx, &exit_tx);
                 let _ = req.response_tx.send(response);
             }
 
@@ -234,7 +265,7 @@ pub async fn run(
                             workspace_index: app.active_workspace,
                             shell_name,
                             pipe_path: &app.pipe_path,
-                            content_area: ratatui::layout::Rect::default(),
+                            zoom_surface: app.zoom_surface,
                         };
                         render_frame(f, &ctx);
                     })?;
@@ -256,6 +287,7 @@ fn handle_action(
     app: &mut App,
     action: Action,
     pty_tx: &mpsc::UnboundedSender<(Uuid, Vec<u8>)>,
+    exit_tx: &mpsc::UnboundedSender<Uuid>,
     terminal: &Terminal<CrosstermBackend<io::Stdout>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let size = terminal.size()?;
@@ -266,13 +298,13 @@ fn handle_action(
             if let Some(id) = app.focused_surface {
                 if let Some(surface) = app.surfaces.get_mut(&id) {
                     if let Some(bytes) = key_event_to_bytes(&key) {
-                        let _ = surface.send_text(std::str::from_utf8(&bytes).unwrap_or(""));
+                        let _ = surface.send_bytes(&bytes);
                     }
                 }
             }
         }
         Action::NewWorkspace => {
-            app.create_workspace(None, pty_tx, size.width, content_h)?;
+            app.create_workspace(None, pty_tx, exit_tx, size.width, content_h)?;
         }
         Action::NextWorkspace => {
             if !app.workspaces.is_empty() {
@@ -280,6 +312,7 @@ fn handle_action(
                 app.focused_surface = Some(
                     app.workspaces[app.active_workspace].split_tree.first_surface(),
                 );
+                app.resize_active_workspace();
             }
         }
         Action::PrevWorkspace => {
@@ -292,6 +325,7 @@ fn handle_action(
                 app.focused_surface = Some(
                     app.workspaces[app.active_workspace].split_tree.first_surface(),
                 );
+                app.resize_active_workspace();
             }
         }
         Action::SelectWorkspace(idx) => {
@@ -300,13 +334,14 @@ fn handle_action(
                 app.focused_surface = Some(
                     app.workspaces[app.active_workspace].split_tree.first_surface(),
                 );
+                app.resize_active_workspace();
             }
         }
         Action::SplitVertical => {
-            app.split_surface(Direction::Vertical, pty_tx, size.width / 2, content_h)?;
+            app.split_surface(Direction::Vertical, pty_tx, exit_tx, size.width / 2, content_h)?;
         }
         Action::SplitHorizontal => {
-            app.split_surface(Direction::Horizontal, pty_tx, size.width, content_h / 2)?;
+            app.split_surface(Direction::Horizontal, pty_tx, exit_tx, size.width, content_h / 2)?;
         }
         Action::FocusRight | Action::FocusDown => {
             if let (Some(focused), Some(ws)) = (app.focused_surface, app.active_workspace_ref()) {

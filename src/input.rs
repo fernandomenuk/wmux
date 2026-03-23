@@ -28,6 +28,7 @@ impl InputHandler {
         Self { prefix_mode: false }
     }
 
+    #[allow(dead_code)]
     pub fn is_prefix_mode(&self) -> bool {
         self.prefix_mode
     }

@@ -40,10 +40,12 @@ pub fn spawn_pty(
 }
 
 /// Start a thread that reads from the PTY and sends output to a channel.
+/// When the reader ends (shell exits), sends an exit notification on `exit_tx`.
 pub fn start_pty_reader(
     surface_id: Uuid,
     master: &dyn MasterPty,
     tx: mpsc::UnboundedSender<(Uuid, Vec<u8>)>,
+    exit_tx: mpsc::UnboundedSender<Uuid>,
 ) -> Result<std::thread::JoinHandle<()>, Box<dyn std::error::Error>> {
     let mut reader = master.try_clone_reader()?;
     let handle = std::thread::spawn(move || {
@@ -59,6 +61,8 @@ pub fn start_pty_reader(
                 Err(_) => break,
             }
         }
+        // Notify that this surface's PTY has exited
+        let _ = exit_tx.send(surface_id);
     });
     Ok(handle)
 }

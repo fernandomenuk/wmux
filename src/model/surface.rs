@@ -3,6 +3,7 @@ use vt100::Parser;
 use std::io::Write;
 use crate::terminal::pty::PtyHandle;
 
+#[allow(dead_code)]
 pub struct Surface {
     pub id: Uuid,
     pub shell: String,
@@ -34,8 +35,13 @@ impl Surface {
 
     /// Write text to the PTY (user input).
     pub fn send_text(&mut self, text: &str) -> Result<(), std::io::Error> {
+        self.send_bytes(text.as_bytes())
+    }
+
+    /// Write raw bytes to the PTY.
+    pub fn send_bytes(&mut self, data: &[u8]) -> Result<(), std::io::Error> {
         if let Some(ref mut pty) = self.pty {
-            pty.writer.write_all(text.as_bytes())?;
+            pty.writer.write_all(data)?;
             pty.writer.flush()?;
         }
         Ok(())

@@ -10,6 +10,7 @@ pub fn dispatch(
     app: &mut App,
     req: &Request,
     pty_tx: &mpsc::UnboundedSender<(Uuid, Vec<u8>)>,
+    exit_tx: &mpsc::UnboundedSender<Uuid>,
 ) -> Response {
     match req.method.as_str() {
         "system.ping" => Response::success(req.id.clone(), json!({"pong": true})),
@@ -35,7 +36,8 @@ pub fn dispatch(
         "workspace.create" => {
             let params = req.params.as_ref().unwrap_or(&Value::Null);
             let name = params.get("name").and_then(|v| v.as_str()).map(String::from);
-            match app.create_workspace(name, pty_tx, 80, 24) {
+            let (cols, rows) = app.terminal_size;
+            match app.create_workspace(name, pty_tx, exit_tx, cols, rows) {
                 Ok(ws_id) => Response::success(req.id.clone(), json!({"id": ws_id.to_string()})),
                 Err(e) => Response::error(req.id.clone(), "create_failed", &e.to_string()),
             }
@@ -132,7 +134,8 @@ pub fn dispatch(
                 "horizontal" => Direction::Horizontal,
                 _ => Direction::Vertical,
             };
-            match app.split_surface(direction, pty_tx, 80, 24) {
+            let (cols, rows) = app.terminal_size;
+            match app.split_surface(direction, pty_tx, exit_tx, cols, rows) {
                 Ok(Some(id)) => Response::success(req.id.clone(), json!({"id": id.to_string()})),
                 Ok(None) => Response::error(req.id.clone(), "no_focus", "No focused surface to split"),
                 Err(e) => Response::error(req.id.clone(), "split_failed", &e.to_string()),

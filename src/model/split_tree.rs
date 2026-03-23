@@ -68,6 +68,7 @@ impl SplitNode {
     }
 
     /// Navigate from a surface in a given direction. Returns the target surface ID.
+    #[allow(dead_code)]
     pub fn navigate(&self, from: Uuid, direction: Direction) -> Option<Uuid> {
         let ids = self.surface_ids();
         let idx = ids.iter().position(|id| *id == from)?;

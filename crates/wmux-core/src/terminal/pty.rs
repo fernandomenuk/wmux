@@ -7,6 +7,7 @@ pub struct PtyHandle {
     pub master: Box<dyn MasterPty + Send>,
     pub writer: Box<dyn Write + Send>,
     pub child: Box<dyn Child + Send + Sync>,
+    pub pid: u32,
 }
 
 /// Spawn a new PTY with the given shell and size.
@@ -30,12 +31,14 @@ pub fn spawn_pty(
     }
 
     let child = pair.slave.spawn_command(cmd)?;
+    let pid = child.process_id().unwrap_or(0);
     let writer = pair.master.take_writer()?;
 
     Ok(PtyHandle {
         master: pair.master,
         writer,
         child,
+        pid,
     })
 }
 

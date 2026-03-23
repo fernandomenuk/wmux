@@ -26,11 +26,19 @@
     <div id="pane-area"></div>
   </div>
 
+  <!-- Command Palette -->
+  <div id="command-palette">
+    <input type="text" id="cp-input" placeholder="Type a command or search..." autocomplete="off">
+    <div id="cp-results"></div>
+  </div>
+
   <!-- Status Bar -->
   <div id="status-bar">
-    <span id="status-shell"></span>
-    <span id="status-workspace"></span>
-    <span id="status-pane"></span>
+    <span class="status-chip">Shell: <span id="status-shell" class="status-value"></span></span>
+    <span class="status-chip">WS: <span id="status-workspace" class="status-value"></span></span>
+    <span class="status-chip">Pane: <span id="status-pane" class="status-value"></span></span>
+    <span class="status-chip">CPU: <span id="status-cpu" class="status-value">0%</span></span>
+    <span class="status-chip">MEM: <span id="status-mem" class="status-value">0MB</span></span>
   </div>
 
   <script type="module" src="main.js"></script>

@@ -2,6 +2,7 @@ import * as tm from './terminal-manager.js';
 import { attachKeybindings } from './keybindings.js';
 import { refreshLayout, setupResizeHandler } from './layout.js';
 import { setupSidebar, refreshTabs, getActiveIndex } from './sidebar.js';
+import { setupCommandPalette } from './command-palette.js';
 
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
@@ -17,11 +18,10 @@ async function init() {
     attachKeybindings(term, () => tm.getFocusedId(), getActiveIndex);
   });
 
-  // Set up sidebar buttons
+  // Set up UI components
   setupSidebar();
-
-  // Set up window resize debouncing
   setupResizeHandler();
+  setupCommandPalette();
 
   // PTY output → route to correct terminal
   listen('pty-output', (event) => {

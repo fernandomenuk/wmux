@@ -68,6 +68,12 @@ struct SplitResult {
 }
 
 #[derive(Clone, Serialize)]
+struct MetricsResult {
+    cpu: f32,
+    memory: u64,
+}
+
+#[derive(Clone, Serialize)]
 struct CreateResult {
     workspace_id: String,
 }
@@ -374,6 +380,19 @@ async fn toggle_zoom(
     Ok(())
 }
 
+#[tauri::command]
+async fn get_process_metrics(
+    state: tauri::State<'_, Arc<AppState>>,
+    surface_id: String,
+) -> Result<MetricsResult, String> {
+    let mut core = state.core.lock().await;
+    let id = Uuid::parse_str(&surface_id).map_err(|e| e.to_string())?;
+    match core.get_process_metrics(id) {
+        Some((cpu, memory)) => Ok(MetricsResult { cpu, memory }),
+        None => Err("Process not found or PID 0".to_string()),
+    }
+}
+
 // ── App Setup ──
 
 fn main() {
@@ -447,6 +466,7 @@ fn main() {
             get_layout,
             get_tab_info,
             toggle_zoom,
+            get_process_metrics,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

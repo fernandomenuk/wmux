@@ -19,6 +19,8 @@ pub enum FocusDirection {
     Right,
 }
 
+use sysinfo::{System, Pid};
+
 pub struct WmuxCore {
     pub workspaces: Vec<Workspace>,
     pub surfaces: HashMap<Uuid, Surface>,
@@ -29,6 +31,7 @@ pub struct WmuxCore {
     pub zoom_surface: Option<Uuid>,
     should_quit: bool,
     pub terminal_size: (u16, u16),
+    pub sys: System,
 }
 
 impl WmuxCore {
@@ -43,7 +46,19 @@ impl WmuxCore {
             zoom_surface: None,
             should_quit: false,
             terminal_size: (80, 24),
+            sys: System::new_all(),
         }
+    }
+
+    pub fn get_process_metrics(&mut self, surface_id: Uuid) -> Option<(f32, u64)> {
+        let pid = self.surfaces.get(&surface_id)?.pid;
+        if pid == 0 {
+            return None;
+        }
+
+        self.sys.refresh_process(Pid::from(pid as usize));
+        let process = self.sys.process(Pid::from(pid as usize))?;
+        Some((process.cpu_usage(), process.memory()))
     }
 
     pub fn should_quit(&self) -> bool {

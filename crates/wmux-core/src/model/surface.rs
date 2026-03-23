@@ -7,6 +7,7 @@ use crate::terminal::pty::PtyHandle;
 pub struct Surface {
     pub id: Uuid,
     pub shell: String,
+    pub pid: u32,
     pub size: (u16, u16),
     pub dirty: bool,
     pub exited: Option<i32>,
@@ -16,9 +17,11 @@ pub struct Surface {
 
 impl Surface {
     pub fn new(id: Uuid, shell: String, cols: u16, rows: u16, pty: PtyHandle) -> Self {
+        let pid = pty.pid;
         Self {
             id,
             shell,
+            pid,
             size: (cols, rows),
             dirty: true,
             exited: None,

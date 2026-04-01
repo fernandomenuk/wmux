@@ -453,7 +453,10 @@ async fn setup_claude_code(app_handle: tauri::AppHandle) -> Result<String, Strin
     };
 
     // Add/update wmux MCP server config
-    let mcp_path = mcp_entry.to_string_lossy().replace('\\', "/");
+    // Strip Windows UNC prefix (\\?\) that Tauri adds
+    let mcp_path = mcp_entry.to_string_lossy()
+        .replace('\\', "/")
+        .replace("///?/", "");
     let mcp_config = serde_json::json!({
         "command": "node",
         "args": [mcp_path]

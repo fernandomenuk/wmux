@@ -39,6 +39,29 @@ function getFocusedId() {
   return document.querySelector('.pane.focused')?.dataset.surfaceId;
 }
 
+export function toggleCommandPalette() {
+  const palette = document.getElementById('command-palette');
+  if (palette.classList.contains('open')) {
+    palette.classList.remove('open');
+    document.getElementById('cp-input').value = '';
+    document.querySelector('.pane.focused')?.focus();
+  } else {
+    palette.classList.add('open');
+    document.getElementById('cp-input').focus();
+    filteredCommands = [...COMMANDS];
+    selectedIndex = 0;
+    const results = document.getElementById('cp-results');
+    results.innerHTML = '';
+    filteredCommands.forEach((cmd, i) => {
+      const div = document.createElement('div');
+      div.className = `cp-item ${i === selectedIndex ? 'selected' : ''}`;
+      div.innerHTML = `<span>${cmd.name}</span><span class="cp-hint">${cmd.hint}</span>`;
+      div.onclick = () => { cmd.action(); toggleCommandPalette(); };
+      results.appendChild(div);
+    });
+  }
+}
+
 export function setupCommandPalette() {
   const palette = document.getElementById('command-palette');
   const input = document.getElementById('cp-input');

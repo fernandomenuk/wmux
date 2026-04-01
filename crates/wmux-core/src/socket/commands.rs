@@ -22,7 +22,8 @@ pub fn dispatch(
                 "workspace.list", "workspace.create", "workspace.select",
                 "workspace.current", "workspace.close",
                 "surface.list", "surface.split", "surface.focus",
-                "surface.close", "surface.send_text", "surface.send_key"
+                "surface.close", "surface.send_text", "surface.send_key",
+                "surface.read_output"
             ]
         })),
 
@@ -204,6 +205,23 @@ pub fn dispatch(
                             Ok(_) => Response::success(req.id.clone(), json!({})),
                             Err(e) => Response::error(req.id.clone(), "send_failed", &e.to_string()),
                         }
+                    } else {
+                        Response::error(req.id.clone(), "not_found", "Surface not found")
+                    }
+                }
+                Err(_) => Response::error(req.id.clone(), "invalid_id", "Invalid UUID"),
+            }
+        }
+
+        "surface.read_output" => {
+            let params = req.params.as_ref().unwrap_or(&Value::Null);
+            let id_str = params.get("id").and_then(|v| v.as_str()).unwrap_or("");
+            let max_rows = params.get("rows").and_then(|v| v.as_u64()).map(|n| n as usize);
+            match Uuid::parse_str(id_str) {
+                Ok(id) => {
+                    if let Some(surface) = core.surfaces.get(&id) {
+                        let output = surface.read_output(max_rows);
+                        Response::success(req.id.clone(), json!({"output": output}))
                     } else {
                         Response::error(req.id.clone(), "not_found", "Surface not found")
                     }

@@ -304,6 +304,39 @@ fn unknown_method_errors() {
     assert_eq!(resp.error.unwrap().code, "unknown_method");
 }
 
+// === surface.read_output ===
+
+#[test]
+fn surface_read_output_returns_screen_content() {
+    let (mut core, pty_tx, exit_tx) = setup_core_with_workspace();
+    let id = core.focused_surface.unwrap().to_string();
+    let req = make_request("1", "surface.read_output", json!({"id": id}));
+    let resp = dispatch(&mut core, &req, &pty_tx, &exit_tx);
+    assert!(resp.ok);
+    assert!(resp.result.unwrap()["output"].as_str().is_some());
+}
+
+#[test]
+fn surface_read_output_with_rows_limit() {
+    let (mut core, pty_tx, exit_tx) = setup_core_with_workspace();
+    let id = core.focused_surface.unwrap().to_string();
+    let req = make_request("1", "surface.read_output", json!({"id": id, "rows": 5}));
+    let resp = dispatch(&mut core, &req, &pty_tx, &exit_tx);
+    assert!(resp.ok);
+    let output = resp.result.unwrap()["output"].as_str().unwrap().to_string();
+    assert!(output.lines().count() <= 5);
+}
+
+#[test]
+fn surface_read_output_nonexistent_errors() {
+    let (mut core, pty_tx, exit_tx) = setup_core_with_workspace();
+    let fake_id = Uuid::new_v4().to_string();
+    let req = make_request("1", "surface.read_output", json!({"id": fake_id}));
+    let resp = dispatch(&mut core, &req, &pty_tx, &exit_tx);
+    assert!(!resp.ok);
+    assert_eq!(resp.error.unwrap().code, "not_found");
+}
+
 // === response ID passthrough ===
 
 #[test]

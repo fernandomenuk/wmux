@@ -1,14 +1,10 @@
 <div align="center">
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/logo.png" width="140">
-  <source media="(prefers-color-scheme: light)" srcset="docs/logo.png" width="140">
-  <img alt="wmux" src="docs/logo.png" width="140">
-</picture>
+<a href="https://github.com/fernandomenuk/wmux">
+  <img alt="wmux — terminal multiplexer for Windows" src="docs/banner.png" width="100%">
+</a>
 
-<h1>wmux</h1>
-
-**tmux for Windows. Finally.**
+<br>
 
 [![Release](https://img.shields.io/github/v/release/fernandomenuk/wmux?style=for-the-badge&color=7c3aed&labelColor=18181b)](https://github.com/fernandomenuk/wmux/releases)
 [![Stars](https://img.shields.io/github/stars/fernandomenuk/wmux?style=for-the-badge&color=7c3aed&labelColor=18181b)](https://github.com/fernandomenuk/wmux/stargazers)

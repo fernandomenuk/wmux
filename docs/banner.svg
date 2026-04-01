@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" width="1200" height="300">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0c0a14"/>
+      <stop offset="100%" style="stop-color:#12101c"/>
+    </linearGradient>
+    <linearGradient id="body1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#c4b5fd"/>
+      <stop offset="100%" style="stop-color:#a78bfa"/>
+    </linearGradient>
+    <linearGradient id="body2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#a78bfa"/>
+      <stop offset="100%" style="stop-color:#8b5cf6"/>
+    </linearGradient>
+    <linearGradient id="body3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b5cf6"/>
+      <stop offset="100%" style="stop-color:#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e2e0ea"/>
+      <stop offset="100%" style="stop-color:#fafafa"/>
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#a78bfa"/>
+      <stop offset="100%" style="stop-color:#7c3aed"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="textShadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#7c3aed" flood-opacity="0.4"/>
+    </filter>
+    <filter id="subtleGlow">
+      <feGaussianBlur stdDeviation="15" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="300" fill="url(#bg)" rx="16"/>
+
+  <!-- Subtle grid lines -->
+  <line x1="0" y1="75" x2="1200" y2="75" stroke="#a78bfa" stroke-opacity="0.03" stroke-width="1"/>
+  <line x1="0" y1="150" x2="1200" y2="150" stroke="#a78bfa" stroke-opacity="0.03" stroke-width="1"/>
+  <line x1="0" y1="225" x2="1200" y2="225" stroke="#a78bfa" stroke-opacity="0.03" stroke-width="1"/>
+  <line x1="300" y1="0" x2="300" y2="300" stroke="#a78bfa" stroke-opacity="0.03" stroke-width="1"/>
+  <line x1="600" y1="0" x2="600" y2="300" stroke="#a78bfa" stroke-opacity="0.03" stroke-width="1"/>
+  <line x1="900" y1="0" x2="900" y2="300" stroke="#a78bfa" stroke-opacity="0.03" stroke-width="1"/>
+
+  <!-- Ambient glow behind mascot -->
+  <circle cx="200" cy="150" r="120" fill="#7c3aed" opacity="0.06" filter="url(#subtleGlow)"/>
+
+  <!-- ===== MASCOT (scaled & positioned) ===== -->
+  <g transform="translate(80, 30) scale(0.72)">
+    <!-- Back rectangle -->
+    <rect x="110" y="20" width="200" height="160" rx="20" fill="url(#body1)" opacity="0.7"/>
+    <!-- Middle rectangle -->
+    <rect x="90" y="55" width="200" height="160" rx="20" fill="url(#body2)" opacity="0.85"/>
+    <!-- Front rectangle (face) -->
+    <rect x="100" y="35" width="200" height="170" rx="22" fill="url(#body3)"/>
+    <!-- Eyes -->
+    <circle cx="162" cy="115" r="16" fill="white"/>
+    <circle cx="238" cy="115" r="16" fill="white"/>
+    <circle cx="166" cy="118" r="8" fill="#1e1033"/>
+    <circle cx="242" cy="118" r="8" fill="#1e1033"/>
+    <!-- Eye shine -->
+    <circle cx="170" cy="113" r="3" fill="white" opacity="0.9"/>
+    <circle cx="246" cy="113" r="3" fill="white" opacity="0.9"/>
+    <!-- Mouth -->
+    <path d="M182 153 Q200 169 218 153" stroke="#1e1033" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <!-- Split line -->
+    <line x1="200" y1="45" x2="200" y2="60" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+    <line x1="173" y1="53" x2="227" y2="53" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+    <!-- Legs -->
+    <rect x="152" y="205" width="24" height="40" rx="10" fill="url(#body3)"/>
+    <rect x="224" y="205" width="24" height="40" rx="10" fill="url(#body3)"/>
+    <!-- Feet -->
+    <ellipse cx="164" cy="247" rx="18" ry="10" fill="#7c3aed"/>
+    <ellipse cx="236" cy="247" rx="18" ry="10" fill="#7c3aed"/>
+    <!-- Arms -->
+    <rect x="68" y="100" width="36" height="18" rx="9" fill="url(#body2)"/>
+    <rect x="296" y="100" width="36" height="18" rx="9" fill="url(#body2)"/>
+  </g>
+
+  <!-- ===== TEXT: WMUX ===== -->
+  <!-- W - accent purple -->
+  <text x="390" y="195" font-family="'Segoe UI Black', 'Arial Black', 'Impact', sans-serif" font-weight="900" font-size="155" fill="url(#accentGrad)" filter="url(#textShadow)" letter-spacing="-2">W</text>
+
+  <!-- MUX - white/light -->
+  <text x="530" y="195" font-family="'Segoe UI Black', 'Arial Black', 'Impact', sans-serif" font-weight="900" font-size="155" fill="url(#textGrad)" letter-spacing="-2">MUX</text>
+
+  <!-- Tagline -->
+  <text x="395" y="240" font-family="'Segoe UI', 'Arial', sans-serif" font-weight="400" font-size="22" fill="#a78bfa" letter-spacing="6" opacity="0.85">TERMINAL MULTIPLEXER FOR WINDOWS</text>
+
+  <!-- Decorative accent line -->
+  <rect x="390" y="252" width="120" height="3" rx="1.5" fill="url(#accentGrad)" opacity="0.6"/>
+
+  <!-- Border glow -->
+  <rect width="1200" height="300" fill="none" rx="16" stroke="#7c3aed" stroke-width="1" stroke-opacity="0.15"/>
+</svg>

@@ -3,3 +3,7 @@
 /wmux-app.log
 /crates/wmux-app/tauri-dev.log
 /crates/wmux-app/gen/
+
+# MCP server
+mcp/node_modules/
+mcp/dist/

@@ -1,0 +1,21 @@
+{
+  "name": "wmux-mcp",
+  "version": "0.6.3",
+  "description": "MCP server for wmux terminal multiplexer",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "wmux-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0"
+  }
+}

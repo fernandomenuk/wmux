@@ -2,7 +2,7 @@ import * as tm from './terminal-manager.js';
 import { attachKeybindings } from './keybindings.js';
 import { refreshLayout, setupResizeHandler } from './layout.js';
 import { setupSidebar, refreshTabs, getActiveIndex } from './sidebar.js';
-import { setupCommandPalette } from './command-palette.js';
+import { setupCommandPalette, toggleCommandPalette } from './command-palette.js';
 
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
@@ -22,6 +22,9 @@ async function init() {
   setupSidebar();
   setupResizeHandler();
   setupCommandPalette();
+
+  // Status bar hint opens command palette on click
+  document.getElementById('cmd-palette-hint')?.addEventListener('click', toggleCommandPalette);
 
   // PTY output → route to correct terminal
   listen('pty-output', (event) => {

@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="wmux Claude Code integration — MCP server setup for AI-driven terminal control.">
+  <meta name="color-scheme" content="dark">
+  <title>Claude Code Integration — wmux</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { transition: none !important; animation: none !important; }
+    }
+
+    :root {
+      --bg: #09090b;
+      --bg-subtle: #111113;
+      --fg: #fafafa;
+      --fg-secondary: #a1a1aa;
+      --muted: #71717a;
+      --accent: #a78bfa;
+      --accent-hover: #c4b5fd;
+      --accent-glow: rgba(167, 139, 250, 0.15);
+      --border: rgba(255, 255, 255, 0.06);
+      --border-hover: rgba(255, 255, 255, 0.12);
+      --card-bg: rgba(255, 255, 255, 0.03);
+      --card-bg-hover: rgba(255, 255, 255, 0.06);
+      --mono: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--sans);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .container { max-width: 1080px; margin: 0 auto; padding: 0 2rem; }
+    section { padding: 6rem 0; }
+
+    .fade-in {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .nav-link { color: var(--muted); text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
+    .nav-link:hover { color: var(--fg); }
+
+    .doc-content { max-width: 720px; margin: 0 auto; }
+    .doc-content h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem; letter-spacing: -0.03em; }
+    .doc-content h2 { font-size: 1.5rem; font-weight: 700; margin: 3rem 0 1rem; letter-spacing: -0.02em; color: var(--fg); }
+    .doc-content h3 { font-size: 1.1rem; font-weight: 600; margin: 2rem 0 0.75rem; color: var(--fg); }
+    .doc-content p { color: var(--fg-secondary); margin-bottom: 1rem; line-height: 1.7; }
+    .doc-content code { font-family: var(--mono); font-size: 0.85em; background: var(--card-bg-hover); padding: 0.15rem 0.5rem; border-radius: 4px; border: 1px solid var(--border); color: var(--accent); }
+    .doc-content pre { background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; font-family: var(--mono); font-size: 0.85rem; line-height: 1.8; overflow-x: auto; margin: 1rem 0 1.5rem; }
+    .doc-content pre code { background: none; border: none; padding: 0; color: var(--fg-secondary); }
+    .doc-content table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; }
+    .doc-content th, .doc-content td { text-align: left; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+    .doc-content th { color: var(--muted); font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; }
+    .doc-content td { color: var(--fg-secondary); }
+    .doc-content td code { font-size: 0.8rem; }
+    .doc-content ul, .doc-content ol { color: var(--fg-secondary); margin: 0 0 1.5rem 1.5rem; line-height: 1.8; }
+    .doc-content strong { color: var(--fg); }
+    .doc-content a { color: var(--accent); text-decoration: none; }
+    .doc-content a:hover { text-decoration: underline; }
+
+    /* Architecture diagram */
+    .arch-diagram {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      margin: 1.5rem 0;
+      text-align: center;
+      font-family: var(--mono);
+      font-size: 0.9rem;
+      color: var(--fg-secondary);
+      line-height: 2;
+    }
+    .arch-diagram .arch-label {
+      display: inline-block;
+      background: var(--card-bg-hover);
+      border: 1px solid var(--border-hover);
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      color: var(--fg);
+      font-weight: 500;
+    }
+    .arch-diagram .arch-arrow {
+      display: inline-block;
+      color: var(--accent);
+      margin: 0 0.75rem;
+      font-weight: 600;
+    }
+    .arch-diagram .arch-proto {
+      display: block;
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-top: -0.25rem;
+    }
+
+    /* Tool list */
+    .tool-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 0.5rem;
+      margin: 1rem 0 1.5rem;
+    }
+    .tool-item {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      padding: 0.6rem 0.85rem;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--accent);
+      transition: border-color 0.2s;
+    }
+    .tool-item:hover {
+      border-color: var(--border-hover);
+    }
+
+    /* Prompt examples */
+    .prompt-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      margin: 0.5rem 0;
+      color: var(--fg-secondary);
+      font-size: 0.9rem;
+      font-style: italic;
+      transition: border-color 0.2s;
+    }
+    .prompt-card:hover {
+      border-color: var(--border-hover);
+    }
+    .prompt-card::before {
+      content: '"';
+      color: var(--accent);
+      font-size: 1.2rem;
+      font-style: normal;
+      font-weight: 700;
+      margin-right: 0.25rem;
+    }
+    .prompt-card::after {
+      content: '"';
+      color: var(--accent);
+      font-size: 1.2rem;
+      font-style: normal;
+      font-weight: 700;
+      margin-left: 0.25rem;
+    }
+
+    /* Steps */
+    .step {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+      align-items: flex-start;
+    }
+    .step-num {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--accent-glow);
+      border: 1px solid rgba(167, 139, 250, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .step-text {
+      padding-top: 0.3rem;
+      color: var(--fg-secondary);
+      line-height: 1.6;
+    }
+    .step-text strong { color: var(--fg); }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 4rem 0;
+      margin-top: 2rem;
+    }
+    .footer {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.25rem;
+      text-align: center;
+    }
+    .footer-logo {
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: 1.1rem;
+      letter-spacing: 0.15em;
+      color: var(--fg);
+    }
+    .footer-links { display: flex; gap: 2rem; }
+    .footer-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--fg); }
+    .footer-tagline { color: var(--muted); font-size: 0.8rem; }
+    .footer-copyright { color: rgba(255,255,255,0.2); font-size: 0.75rem; }
+  </style>
+</head>
+<body>
+
+  <nav style="border-bottom: 1px solid rgba(255,255,255,0.06); padding: 1rem 0;">
+    <div class="container" style="display: flex; justify-content: space-between; align-items: center;">
+      <a href="../index.html" style="font-family: var(--mono); font-weight: 700; font-size: 1.1rem; letter-spacing: 0.15em; color: var(--fg); text-decoration: none;">wmux</a>
+      <div style="display: flex; gap: 1.5rem;">
+        <a href="index.html" class="nav-link">Docs</a>
+        <a href="api.html" class="nav-link">API</a>
+        <a href="claude-code.html" class="nav-link">Claude Code</a>
+        <a href="https://github.com/fernandomenuk/wmux" class="nav-link">GitHub</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <section style="padding: 4rem 0 2rem;">
+      <div class="container doc-content fade-in">
+        <h1>Claude Code Integration</h1>
+        <p>wmux ships with a built-in MCP (Model Context Protocol) server that lets Claude Code control your terminals. Create workspaces, split panes, run commands, and read output — all through natural language.</p>
+
+        <h2>Setup</h2>
+        <p>One-click setup from within wmux:</p>
+
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-text"><strong>Open wmux</strong></div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-text">Press <code>Ctrl+Shift+K</code> to open the <strong>command palette</strong></div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-text">Select <strong>"Connect to Claude Code"</strong></div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-text"><strong>Restart Claude Code</strong> — it will automatically discover the wmux MCP server</div>
+        </div>
+
+        <p style="margin-top: 1.5rem;">That's it. Claude Code now has full access to your wmux terminals.</p>
+      </div>
+    </section>
+
+    <section style="padding: 2rem 0;">
+      <div class="container doc-content fade-in">
+        <h2>What Claude Code Can Do</h2>
+        <ul>
+          <li><strong>Create and manage workspaces</strong> — organize terminals by project or task</li>
+          <li><strong>Split terminal panes</strong> — set up side-by-side layouts</li>
+          <li><strong>Run commands and read output</strong> — execute builds, tests, and scripts</li>
+          <li><strong>Send keystrokes</strong> — send Ctrl+C to stop processes, navigate with arrow keys, and more</li>
+        </ul>
+      </div>
+    </section>
+
+    <section style="padding: 2rem 0;">
+      <div class="container doc-content fade-in">
+        <h2>Architecture</h2>
+        <p>The MCP server is bundled with wmux and communicates over stdio with Claude Code, while connecting to wmux via a named pipe:</p>
+
+        <div class="arch-diagram">
+          <span class="arch-label">Claude Code</span>
+          <span class="arch-arrow">&larr; stdio &rarr;</span>
+          <span class="arch-label">MCP Server (bundled)</span>
+          <span class="arch-arrow">&larr; named pipe &rarr;</span>
+          <span class="arch-label">wmux</span>
+        </div>
+
+        <p>The MCP server translates Claude Code's tool calls into JSON-RPC messages on the <code>\\.\pipe\wmux</code> named pipe — the same <a href="api.html">Socket API</a> available to any client.</p>
+      </div>
+    </section>
+
+    <section style="padding: 2rem 0;">
+      <div class="container doc-content fade-in">
+        <h2>Available MCP Tools</h2>
+        <p>The following 13 tools are exposed to Claude Code:</p>
+
+        <div class="tool-grid">
+          <div class="tool-item">wmux_ping</div>
+          <div class="tool-item">wmux_workspace_list</div>
+          <div class="tool-item">wmux_workspace_create</div>
+          <div class="tool-item">wmux_workspace_select</div>
+          <div class="tool-item">wmux_workspace_close</div>
+          <div class="tool-item">wmux_surface_list</div>
+          <div class="tool-item">wmux_surface_split</div>
+          <div class="tool-item">wmux_surface_focus</div>
+          <div class="tool-item">wmux_surface_close</div>
+          <div class="tool-item">wmux_surface_send_text</div>
+          <div class="tool-item">wmux_surface_send_key</div>
+          <div class="tool-item">wmux_surface_read_output</div>
+          <div class="tool-item">wmux_run_command</div>
+        </div>
+
+        <p>Each tool maps directly to a <a href="api.html">Socket API</a> method. See the API reference for detailed parameter and response documentation.</p>
+      </div>
+    </section>
+
+    <section style="padding: 2rem 0 4rem;">
+      <div class="container doc-content fade-in">
+        <h2>Example Prompts</h2>
+        <p>Try these prompts in Claude Code once the integration is set up:</p>
+
+        <div class="prompt-card">List my wmux workspaces</div>
+        <div class="prompt-card">Split the terminal and run cargo test on the right</div>
+        <div class="prompt-card">Create a workspace called 'dev' and run the server</div>
+        <div class="prompt-card">Read the output from the terminal running my tests</div>
+        <div class="prompt-card">Send Ctrl+C to the process in the left pane</div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container footer">
+      <div class="footer-logo">wmux</div>
+      <div class="footer-links">
+        <a href="https://github.com/fernandomenuk/wmux">GitHub</a>
+        <a href="https://github.com/fernandomenuk/wmux/blob/main/LICENSE">License</a>
+        <a href="https://github.com/fernandomenuk/wmux/issues">Issues</a>
+      </div>
+      <div class="footer-tagline">MIT Licensed. Built with Rust.</div>
+      <div class="footer-copyright">&copy; 2026 wmux contributors</div>
+    </div>
+  </footer>
+
+  <script>
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+  </script>
+
+</body>
+</html>

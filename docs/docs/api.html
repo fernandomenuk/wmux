@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="wmux Socket API reference — JSON-RPC over named pipes for programmatic terminal control.">
+  <meta name="color-scheme" content="dark">
+  <title>Socket API — wmux</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { transition: none !important; animation: none !important; }
+    }
+
+    :root {
+      --bg: #09090b;
+      --bg-subtle: #111113;
+      --fg: #fafafa;
+      --fg-secondary: #a1a1aa;
+      --muted: #71717a;
+      --accent: #a78bfa;
+      --accent-hover: #c4b5fd;
+      --accent-glow: rgba(167, 139, 250, 0.15);
+      --border: rgba(255, 255, 255, 0.06);
+      --border-hover: rgba(255, 255, 255, 0.12);
+      --card-bg: rgba(255, 255, 255, 0.03);
+      --card-bg-hover: rgba(255, 255, 255, 0.06);
+      --mono: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--sans);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .container { max-width: 1080px; margin: 0 auto; padding: 0 2rem; }
+    section { padding: 6rem 0; }
+
+    .fade-in {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .nav-link { color: var(--muted); text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
+    .nav-link:hover { color: var(--fg); }
+
+    .doc-content { max-width: 720px; margin: 0 auto; }
+    .doc-content h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem; letter-spacing: -0.03em; }
+    .doc-content h2 { font-size: 1.5rem; font-weight: 700; margin: 3rem 0 1rem; letter-spacing: -0.02em; color: var(--fg); }
+    .doc-content h3 { font-size: 1.1rem; font-weight: 600; margin: 2rem 0 0.75rem; color: var(--fg); }
+    .doc-content p { color: var(--fg-secondary); margin-bottom: 1rem; line-height: 1.7; }
+    .doc-content code { font-family: var(--mono); font-size: 0.85em; background: var(--card-bg-hover); padding: 0.15rem 0.5rem; border-radius: 4px; border: 1px solid var(--border); color: var(--accent); }
+    .doc-content pre { background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; font-family: var(--mono); font-size: 0.85rem; line-height: 1.8; overflow-x: auto; margin: 1rem 0 1.5rem; }
+    .doc-content pre code { background: none; border: none; padding: 0; color: var(--fg-secondary); }
+    .doc-content table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; }
+    .doc-content th, .doc-content td { text-align: left; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+    .doc-content th { color: var(--muted); font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; }
+    .doc-content td { color: var(--fg-secondary); }
+    .doc-content td code { font-size: 0.8rem; }
+    .doc-content ul, .doc-content ol { color: var(--fg-secondary); margin: 0 0 1.5rem 1.5rem; line-height: 1.8; }
+    .doc-content strong { color: var(--fg); }
+    .doc-content a { color: var(--accent); text-decoration: none; }
+    .doc-content a:hover { text-decoration: underline; }
+
+    /* Method blocks */
+    .method-block {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      transition: border-color 0.2s;
+    }
+    .method-block:hover {
+      border-color: var(--border-hover);
+    }
+    .method-name {
+      font-family: var(--mono);
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+    .method-desc {
+      color: var(--fg-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 0.75rem;
+    }
+    .method-label {
+      font-size: 0.7rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 0.25rem;
+    }
+    .method-block pre {
+      margin: 0.5rem 0 0;
+      padding: 1rem;
+      font-size: 0.8rem;
+      line-height: 1.6;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 4rem 0;
+      margin-top: 2rem;
+    }
+    .footer {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.25rem;
+      text-align: center;
+    }
+    .footer-logo {
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: 1.1rem;
+      letter-spacing: 0.15em;
+      color: var(--fg);
+    }
+    .footer-links { display: flex; gap: 2rem; }
+    .footer-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--fg); }
+    .footer-tagline { color: var(--muted); font-size: 0.8rem; }
+    .footer-copyright { color: rgba(255,255,255,0.2); font-size: 0.75rem; }
+  </style>
+</head>
+<body>
+
+  <nav style="border-bottom: 1px solid rgba(255,255,255,0.06); padding: 1rem 0;">
+    <div class="container" style="display: flex; justify-content: space-between; align-items: center;">
+      <a href="../index.html" style="font-family: var(--mono); font-weight: 700; font-size: 1.1rem; letter-spacing: 0.15em; color: var(--fg); text-decoration: none;">wmux</a>
+      <div style="display: flex; gap: 1.5rem;">
+        <a href="index.html" class="nav-link">Docs</a>
+        <a href="api.html" class="nav-link">API</a>
+        <a href="claude-code.html" class="nav-link">Claude Code</a>
+        <a href="https://github.com/fernandomenuk/wmux" class="nav-link">GitHub</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <section style="padding: 4rem 0 2rem;">
+      <div class="container doc-content fade-in">
+        <h1>Socket API Reference</h1>
+        <p>wmux exposes a JSON-RPC API over a Windows named pipe for programmatic control. Compatible with the cmux v2 protocol.</p>
+
+        <h2>Connection</h2>
+        <p>Connect to the named pipe at <code>\\.\pipe\wmux</code>. Messages are newline-delimited JSON.</p>
+
+        <h2>Protocol</h2>
+        <h3>Request Format</h3>
+        <pre><code>{"id": "string", "method": "string", "params": {}}</code></pre>
+
+        <h3>Success Response</h3>
+        <pre><code>{"id": "string", "ok": true, "result": {}}</code></pre>
+
+        <h3>Error Response</h3>
+        <pre><code>{"id": "string", "ok": false, "error": {"code": "string", "message": "string"}}</code></pre>
+      </div>
+    </section>
+
+    <section style="padding: 2rem 0;">
+      <div class="container doc-content fade-in">
+        <h2>System Methods</h2>
+
+        <div class="method-block">
+          <div class="method-name">system.ping</div>
+          <div class="method-desc">Health check. Returns a pong response.</div>
+          <div class="method-label">Params</div>
+          <p style="margin-bottom: 0.5rem;">None</p>
+          <div class="method-label">Response</div>
+          <pre><code>{"pong": true}</code></pre>
+          <div class="method-label">Example</div>
+          <pre><code>// Request
+{"id": "1", "method": "system.ping", "params": {}}
+
+// Response
+{"id": "1", "ok": true, "result": {"pong": true}}</code></pre>
+        </div>
+
+        <div class="method-block">
+          <div class="method-name">system.capabilities</div>
+          <div class="method-desc">Returns the server version and list of available commands.</div>
+          <div class="method-label">Params</div>
+          <p style="margin-bottom: 0.5rem;">None</p>
+          <div class="method-label">Response</div>
+          <pre><code>{"version": "0.1.0", "commands": ["system.ping", "workspace.list", ...]}</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section style="padding: 2rem 0;">
+      <div class="container doc-content fade-in">
+        <h2>Workspace Methods</h2>
+
+        <div class="method-block">
+          <div class="method-name">workspace.list</div>
+          <div class="method-desc">List all workspaces.</div>
+          <div class="method-label">Params</div>
+          <p style="margin-bottom: 0.5rem;">None</p>
+          <div class="method-label">Response</div>
+          <pre><code>{"workspaces": [{"id": "uuid", "name": "string", "index": 0}]}</code></pre>
+          <div class="method-label">Example</div>
+          <pre><code>// Request
+{"id": "2", "method": "workspace.list", "params": {}}
+
+// Response
+{"id": "2", "ok": true, "result": {"workspaces": [
+  {"id": "a1b2c3d4", "name": "Project Alpha", "index": 0},
+  {"id": "e5f6g7h8", "name": "Dev Server", "index": 1}
+]}}</code></pre>
+        </div>
+
+        <div class="method-block">
+          <div class="method-name">workspace.create</div>
+          <div class="method-desc">Create a new workspace.</div>
+          <div class="method-label">Params</div>
+          <table>
+            <thead><tr><th>Name</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>name</code></td><td>string</td><td>No</td><td>Display name for the workspace</td></tr>
+            </tbody>
+          </table>
+          <div class="method-label">Response</div>
+          <pre><code>{"id": "uuid"}</code></pre>
+          <div class="method-label">Example</div>
+          <pre><code>// Request
+{"id": "3", "method": "workspace.create", "params": {"name": "Testing"}}
+
+// Response
+{"id": "3", "ok": true, "result": {"id": "f9a8b7c6"}}</code></pre>
+        </div>
+
+        <div class="method-block">
+          <div class="method-name">workspace.select</div>
+          <div class="method-desc">Switch to a workspace by ID.</div>
+          <div class="method-label">Params</div>
+          <table>
+            <thead><tr><th>Name</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>id</code></td><td>uuid</td><td>Yes</td><td>Workspace ID to select</td></tr>
+            </tbody>
+          </table>
+          <div class="method-label">Response</div>
+          <pre><code>{}</code></pre>
+        </div>
+
+        <div class="method-block">
+          <div class="method-name">workspace.current</div>
+          <div class="method-desc">Get the currently active workspace.</div>
+          <div class="method-label">Params</div>
+          <p style="margin-bottom: 0.5rem;">None</p>
+          <div class="method-label">Response</div>
+          <pre><code>{"id": "uuid", "name": "string", "index": 0}</code></pre>
+        </div>
+
+        <div class="method-block">
+          <div class="method-name">workspace.close</div>
+          <div class="method-desc">Close a workspace and all its surfaces.</div>
+          <div class="method-label">Params</div>
+          <table>
+            <thead><tr><th>Name</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>id</code></td><td>uuid</td><td>Yes</td><td>Workspace ID to close</td></tr>
+            </tbody>
+          </table>
+          <div class="method-label">Response</div>
+          <pre><code>{}</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section style="padding: 2rem 0;">
+      <div class="container doc-content fade-in">
+        <h2>Surface Methods</h2>
+
+        <div class="method-block">
+          <div class="method-name">surface.list</div>
+          <div class="method-desc">List all surfaces, optionally filtered by workspace.</div>
+          <div class="method-label">Params</div>
+          <table>
+            <thead><tr><th>Name</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>workspace_id</code></td><td>uuid</td><td>No</td><td>Filter to a specific workspace</td></tr>
+            </tbody>
+          </table>
+          <div class="method-label">Response</div>
+          <pre><code>{"surfaces": [{"id": "uuid", "focused": true}]}</code></pre>
+        </div>
+
+        <div class="method-block">
+          <div class="method-name">surface.split</div>
+          <div class="method-desc">Split the currently focused surface.</div>
+          <div class="method-label">Params</div>
+          <table>
+            <thead><tr><th>Name</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>direction</code></td><td>string</td><td>Yes</td><td><code>"vertical"</code> or <code>"horizontal"</code></td></tr>
+            </tbody>
+          </table>
+          <div class="method-label">Response</div>
+          <pre><code>{"id": "uuid"}</code></pre>
+          <div class="method-label">Example</div>
+          <pre><code>// Request
+{"id": "10", "method": "surface.split", "params": {"direction": "vertical"}}
+
+// Response
+{"id": "10", "ok": true, "result": {"id": "d4e5f6a7"}}</code></pre>
+        </div>
+
+        <div class="method-block">
+          <div class="method-name">surface.focus</div>
+          <div class="method-desc">Focus a specific surface.</div>
+          <div class="method-label">Params</div>
+          <table>
+            <thead><tr><th>Name</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>id</code></td><td>uuid</td><td>Yes</td><td>Surface ID to focus</td></tr>
+            </tbody>
+          </table>
+          <div class="method-label">Response</div>
+          <pre><code>{}</code></pre>
+        </div>
+
+        <div class="method-block">
+          <div class="method-name">surface.close</div>
+          <div class="method-desc">Close a surface.</div>
+          <div class="method-label">Params</div>
+          <table>
+            <thead><tr><th>Name</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>id</code></td><td>uuid</td><td>Yes</td><td>Surface ID to close</td></tr>
+            </tbody>
+          </table>
+          <div class="method-label">Response</div>
+          <pre><code>{}</code></pre>
+        </div>
+
+        <div class="method-block">
+          <div class="method-name">surface.send_text</div>
+          <div class="method-desc">Send text input to a surface's terminal.</div>
+          <div class="method-label">Params</div>
+          <table>
+            <thead><tr><th>Name</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>id</code></td><td>uuid</td><td>Yes</td><td>Target surface ID</td></tr>
+              <tr><td><code>text</code></td><td>string</td><td>Yes</td><td>Text to send</td></tr>
+            </tbody>
+          </table>
+          <div class="method-label">Response</div>
+          <pre><code>{}</code></pre>
+          <div class="method-label">Example</div>
+          <pre><code>// Request
+{"id": "20", "method": "surface.send_text", "params": {
+  "id": "d4e5f6a7",
+  "text": "cargo test\n"
+}}
+
+// Response
+{"id": "20", "ok": true, "result": {}}</code></pre>
+        </div>
+
+        <div class="method-block">
+          <div class="method-name">surface.send_key</div>
+          <div class="method-desc">Send a special key or key combination to a surface.</div>
+          <div class="method-label">Params</div>
+          <table>
+            <thead><tr><th>Name</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>id</code></td><td>uuid</td><td>Yes</td><td>Target surface ID</td></tr>
+              <tr><td><code>key</code></td><td>string</td><td>Yes</td><td>Key name to send</td></tr>
+            </tbody>
+          </table>
+          <div class="method-label">Supported Keys</div>
+          <p style="margin-bottom: 0.5rem;"><code>Enter</code>, <code>Tab</code>, <code>Escape</code>, <code>Backspace</code>, <code>Up</code>, <code>Down</code>, <code>Left</code>, <code>Right</code>, <code>Home</code>, <code>End</code>, <code>Delete</code>, <code>F1</code>-<code>F12</code>, <code>Ctrl+C</code>, <code>Ctrl+D</code>, <code>Ctrl+Z</code>, <code>Ctrl+L</code>, <code>Ctrl+A</code></p>
+          <div class="method-label">Response</div>
+          <pre><code>{}</code></pre>
+        </div>
+
+        <div class="method-block">
+          <div class="method-name">surface.read_output</div>
+          <div class="method-desc">Read the terminal output from a surface.</div>
+          <div class="method-label">Params</div>
+          <table>
+            <thead><tr><th>Name</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>id</code></td><td>uuid</td><td>Yes</td><td>Target surface ID</td></tr>
+              <tr><td><code>rows</code></td><td>number</td><td>No</td><td>Number of rows to read (from bottom)</td></tr>
+            </tbody>
+          </table>
+          <div class="method-label">Response</div>
+          <pre><code>{"output": "string"}</code></pre>
+          <div class="method-label">Example</div>
+          <pre><code>// Request
+{"id": "30", "method": "surface.read_output", "params": {
+  "id": "d4e5f6a7",
+  "rows": 10
+}}
+
+// Response
+{"id": "30", "ok": true, "result": {
+  "output": "running 62 tests\ntest result: ok. 62 passed\n"
+}}</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section style="padding: 2rem 0 4rem;">
+      <div class="container doc-content fade-in">
+        <h2>PowerShell Connection Example</h2>
+        <p>Here is a complete example of connecting to the wmux socket from PowerShell:</p>
+        <pre><code># Connect to the wmux named pipe
+$pipe = New-Object System.IO.Pipes.NamedPipeClientStream(
+  ".", "wmux", [System.IO.Pipes.PipeDirection]::InOut
+)
+$pipe.Connect(5000)
+
+$writer = New-Object System.IO.StreamWriter($pipe)
+$reader = New-Object System.IO.StreamReader($pipe)
+$writer.AutoFlush = $true
+
+# Send a ping
+$writer.WriteLine('{"id":"1","method":"system.ping","params":{}}')
+$response = $reader.ReadLine()
+Write-Host $response
+# {"id":"1","ok":true,"result":{"pong":true}}
+
+# List workspaces
+$writer.WriteLine('{"id":"2","method":"workspace.list","params":{}}')
+$response = $reader.ReadLine()
+Write-Host $response
+
+# Clean up
+$pipe.Close()</code></pre>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container footer">
+      <div class="footer-logo">wmux</div>
+      <div class="footer-links">
+        <a href="https://github.com/fernandomenuk/wmux">GitHub</a>
+        <a href="https://github.com/fernandomenuk/wmux/blob/main/LICENSE">License</a>
+        <a href="https://github.com/fernandomenuk/wmux/issues">Issues</a>
+      </div>
+      <div class="footer-tagline">MIT Licensed. Built with Rust.</div>
+      <div class="footer-copyright">&copy; 2026 wmux contributors</div>
+    </div>
+  </footer>
+
+  <script>
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+  </script>
+
+</body>
+</html>

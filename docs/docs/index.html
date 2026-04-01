@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="wmux documentation — getting started, keybindings, socket API, and Claude Code integration.">
+  <meta name="color-scheme" content="dark">
+  <title>Documentation — wmux</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { transition: none !important; animation: none !important; }
+    }
+
+    :root {
+      --bg: #09090b;
+      --bg-subtle: #111113;
+      --fg: #fafafa;
+      --fg-secondary: #a1a1aa;
+      --muted: #71717a;
+      --accent: #a78bfa;
+      --accent-hover: #c4b5fd;
+      --accent-glow: rgba(167, 139, 250, 0.15);
+      --border: rgba(255, 255, 255, 0.06);
+      --border-hover: rgba(255, 255, 255, 0.12);
+      --card-bg: rgba(255, 255, 255, 0.03);
+      --card-bg-hover: rgba(255, 255, 255, 0.06);
+      --mono: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--sans);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .container { max-width: 1080px; margin: 0 auto; padding: 0 2rem; }
+    section { padding: 6rem 0; }
+
+    .fade-in {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .nav-link { color: var(--muted); text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
+    .nav-link:hover { color: var(--fg); }
+
+    .doc-content { max-width: 720px; margin: 0 auto; }
+    .doc-content h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem; letter-spacing: -0.03em; }
+    .doc-content h2 { font-size: 1.5rem; font-weight: 700; margin: 3rem 0 1rem; letter-spacing: -0.02em; color: var(--fg); }
+    .doc-content h3 { font-size: 1.1rem; font-weight: 600; margin: 2rem 0 0.75rem; color: var(--fg); }
+    .doc-content p { color: var(--fg-secondary); margin-bottom: 1rem; line-height: 1.7; }
+    .doc-content code { font-family: var(--mono); font-size: 0.85em; background: var(--card-bg-hover); padding: 0.15rem 0.5rem; border-radius: 4px; border: 1px solid var(--border); color: var(--accent); }
+    .doc-content pre { background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; font-family: var(--mono); font-size: 0.85rem; line-height: 1.8; overflow-x: auto; margin: 1rem 0 1.5rem; }
+    .doc-content pre code { background: none; border: none; padding: 0; color: var(--fg-secondary); }
+    .doc-content table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; }
+    .doc-content th, .doc-content td { text-align: left; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+    .doc-content th { color: var(--muted); font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; }
+    .doc-content td { color: var(--fg-secondary); }
+    .doc-content td code { font-size: 0.8rem; }
+    .doc-content ul, .doc-content ol { color: var(--fg-secondary); margin: 0 0 1.5rem 1.5rem; line-height: 1.8; }
+    .doc-content strong { color: var(--fg); }
+    .doc-content a { color: var(--accent); text-decoration: none; }
+    .doc-content a:hover { text-decoration: underline; }
+
+    /* Doc cards */
+    .doc-cards {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      margin: 2rem 0 3rem;
+    }
+    @media (max-width: 600px) {
+      .doc-cards { grid-template-columns: 1fr; }
+    }
+    .doc-card {
+      display: block;
+      padding: 1.75rem;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      text-decoration: none;
+      transition: all 0.25s ease;
+    }
+    .doc-card:hover {
+      background: var(--card-bg-hover);
+      border-color: var(--border-hover);
+      transform: translateY(-2px);
+    }
+    .doc-card h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--fg);
+      margin-bottom: 0.5rem;
+    }
+    .doc-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    /* Keybindings table */
+    .keybindings-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    .keybindings-table th,
+    .keybindings-table td {
+      text-align: left;
+      padding: 0.85rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .keybindings-table th {
+      color: var(--muted);
+      font-weight: 500;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .keybindings-table td { color: var(--fg-secondary); }
+    .keybindings-table kbd {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      background: var(--card-bg-hover);
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      border: 1px solid var(--border-hover);
+      color: var(--fg);
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 4rem 0;
+      margin-top: 2rem;
+    }
+    .footer {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.25rem;
+      text-align: center;
+    }
+    .footer-logo {
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: 1.1rem;
+      letter-spacing: 0.15em;
+      color: var(--fg);
+    }
+    .footer-links { display: flex; gap: 2rem; }
+    .footer-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--fg); }
+    .footer-tagline { color: var(--muted); font-size: 0.8rem; }
+    .footer-copyright { color: rgba(255,255,255,0.2); font-size: 0.75rem; }
+  </style>
+</head>
+<body>
+
+  <nav style="border-bottom: 1px solid rgba(255,255,255,0.06); padding: 1rem 0;">
+    <div class="container" style="display: flex; justify-content: space-between; align-items: center;">
+      <a href="../index.html" style="font-family: var(--mono); font-weight: 700; font-size: 1.1rem; letter-spacing: 0.15em; color: var(--fg); text-decoration: none;">wmux</a>
+      <div style="display: flex; gap: 1.5rem;">
+        <a href="index.html" class="nav-link">Docs</a>
+        <a href="api.html" class="nav-link">API</a>
+        <a href="claude-code.html" class="nav-link">Claude Code</a>
+        <a href="https://github.com/fernandomenuk/wmux" class="nav-link">GitHub</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <section style="padding: 4rem 0 2rem;">
+      <div class="container doc-content fade-in">
+        <h1>Documentation</h1>
+        <p>Everything you need to get started with wmux, configure keybindings, use the socket API, and integrate with Claude Code.</p>
+
+        <div class="doc-cards">
+          <a href="#getting-started" class="doc-card">
+            <h3>Getting Started</h3>
+            <p>Installation, first launch, and basic usage.</p>
+          </a>
+          <a href="#keybindings" class="doc-card">
+            <h3>Keybindings</h3>
+            <p>All keyboard shortcuts and the prefix key system.</p>
+          </a>
+          <a href="api.html" class="doc-card">
+            <h3>Socket API</h3>
+            <p>JSON-RPC over named pipes for programmatic control.</p>
+          </a>
+          <a href="claude-code.html" class="doc-card">
+            <h3>Claude Code Integration</h3>
+            <p>MCP server setup for AI-driven terminal control.</p>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section id="getting-started" style="padding: 2rem 0 4rem;">
+      <div class="container doc-content fade-in">
+        <h2>Getting Started</h2>
+        <p>wmux is a native Windows terminal multiplexer built with Rust and Tauri. It gives you split panes, tabbed workspaces, and a socket API for AI agents — all in a single binary with zero dependencies.</p>
+
+        <h3>Installation</h3>
+        <ol>
+          <li>Download the <code>.msi</code> installer from <a href="https://github.com/fernandomenuk/wmux/releases">GitHub Releases</a></li>
+          <li>Run the installer</li>
+          <li>Open wmux from the Start menu</li>
+        </ol>
+
+        <h3>Building from Source</h3>
+        <pre><code>$ cargo install tauri-cli
+$ git clone https://github.com/fernandomenuk/wmux.git
+$ cd wmux/crates/wmux-app
+$ cargo tauri build</code></pre>
+
+        <h3>Basic Concepts</h3>
+        <p>wmux organizes your terminals using two key concepts:</p>
+        <ul>
+          <li><strong>Workspaces</strong> — Tabs that group related terminal panes together. Think of them like virtual desktops for your terminals. Create a workspace for each project or task.</li>
+          <li><strong>Surfaces</strong> — Individual terminal panes within a workspace. You can split them vertically or horizontally to view multiple terminals side by side.</li>
+        </ul>
+        <p>When you first launch wmux, you get a single workspace with one surface. From there, you can split panes, create new workspaces, and start building your layout.</p>
+      </div>
+    </section>
+
+    <section id="keybindings" style="padding: 2rem 0 4rem;">
+      <div class="container doc-content fade-in">
+        <h2>Keybindings</h2>
+        <p>wmux uses a <strong>prefix key</strong> system. Press <kbd style="font-family: var(--mono); font-size: 0.75rem; background: var(--card-bg-hover); padding: 0.2rem 0.55rem; border-radius: 6px; border: 1px solid var(--border-hover); color: var(--fg);">Ctrl+A</kbd> first, then press the action key.</p>
+
+        <h3>Pane Management</h3>
+        <table class="keybindings-table">
+          <thead>
+            <tr><th>Key</th><th>Action</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><kbd>Ctrl+A</kbd> then <kbd>|</kbd></td><td>Split vertically</td></tr>
+            <tr><td><kbd>Ctrl+A</kbd> then <kbd>-</kbd></td><td>Split horizontally</td></tr>
+            <tr><td><kbd>Ctrl+A</kbd> then <kbd>x</kbd></td><td>Close current pane</td></tr>
+            <tr><td><kbd>Ctrl+A</kbd> then <kbd>z</kbd></td><td>Zoom (toggle fullscreen pane)</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Focus &amp; Navigation</h3>
+        <table class="keybindings-table">
+          <thead>
+            <tr><th>Key</th><th>Action</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><kbd>Ctrl+A</kbd> then <kbd>&uarr;</kbd></td><td>Focus pane above</td></tr>
+            <tr><td><kbd>Ctrl+A</kbd> then <kbd>&darr;</kbd></td><td>Focus pane below</td></tr>
+            <tr><td><kbd>Ctrl+A</kbd> then <kbd>&larr;</kbd></td><td>Focus pane left</td></tr>
+            <tr><td><kbd>Ctrl+A</kbd> then <kbd>&rarr;</kbd></td><td>Focus pane right</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Workspaces</h3>
+        <table class="keybindings-table">
+          <thead>
+            <tr><th>Key</th><th>Action</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><kbd>Ctrl+A</kbd> then <kbd>c</kbd></td><td>Create new workspace</td></tr>
+            <tr><td><kbd>Ctrl+A</kbd> then <kbd>n</kbd></td><td>Next workspace</td></tr>
+            <tr><td><kbd>Ctrl+A</kbd> then <kbd>p</kbd></td><td>Previous workspace</td></tr>
+            <tr><td><kbd>Ctrl+A</kbd> then <kbd>1</kbd>-<kbd>9</kbd></td><td>Switch to workspace by number</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container footer">
+      <div class="footer-logo">wmux</div>
+      <div class="footer-links">
+        <a href="https://github.com/fernandomenuk/wmux">GitHub</a>
+        <a href="https://github.com/fernandomenuk/wmux/blob/main/LICENSE">License</a>
+        <a href="https://github.com/fernandomenuk/wmux/issues">Issues</a>
+      </div>
+      <div class="footer-tagline">MIT Licensed. Built with Rust.</div>
+      <div class="footer-copyright">&copy; 2026 wmux contributors</div>
+    </div>
+  </footer>
+
+  <script>
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+  </script>
+
+</body>
+</html>

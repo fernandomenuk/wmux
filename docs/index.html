@@ -447,7 +447,7 @@
 </head>
 <body>
 
-  <img src="logo.png" alt="wmux mascot" width="72" height="72" style="position: fixed; top: 1.5rem; right: 2rem; z-index: 100; filter: drop-shadow(0 0 20px rgba(167, 139, 250, 0.5)) drop-shadow(0 0 40px rgba(167, 139, 250, 0.25)); animation: bounce 1.4s ease-in-out infinite; cursor: pointer;" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+  <img id="mascot" src="logo.png" alt="wmux mascot" width="72" height="72" style="position: fixed; top: 1.5rem; right: 2rem; z-index: 100; filter: drop-shadow(0 0 20px rgba(167, 139, 250, 0.5)) drop-shadow(0 0 40px rgba(167, 139, 250, 0.25)); animation: bounce 1.4s ease-in-out infinite; cursor: grab; user-select: none;">
 
   <main>
 
@@ -634,6 +634,63 @@ nothing to commit, working tree clean
     }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
 
     document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+    // Draggable mascot
+    const mascot = document.getElementById('mascot');
+    let dragging = false, offsetX, offsetY;
+
+    mascot.addEventListener('mousedown', (e) => {
+      dragging = true;
+      mascot.style.animation = 'none';
+      mascot.style.cursor = 'grabbing';
+      mascot.style.right = 'auto';
+      const rect = mascot.getBoundingClientRect();
+      offsetX = e.clientX - rect.left;
+      offsetY = e.clientY - rect.top;
+      mascot.style.left = rect.left + 'px';
+      mascot.style.top = rect.top + 'px';
+      e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
+      mascot.style.left = (e.clientX - offsetX) + 'px';
+      mascot.style.top = (e.clientY - offsetY) + 'px';
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (!dragging) return;
+      dragging = false;
+      mascot.style.cursor = 'grab';
+      mascot.style.animation = 'bounce 1.4s ease-in-out infinite';
+    });
+
+    // Touch support
+    mascot.addEventListener('touchstart', (e) => {
+      dragging = true;
+      mascot.style.animation = 'none';
+      mascot.style.right = 'auto';
+      const touch = e.touches[0];
+      const rect = mascot.getBoundingClientRect();
+      offsetX = touch.clientX - rect.left;
+      offsetY = touch.clientY - rect.top;
+      mascot.style.left = rect.left + 'px';
+      mascot.style.top = rect.top + 'px';
+      e.preventDefault();
+    }, { passive: false });
+
+    document.addEventListener('touchmove', (e) => {
+      if (!dragging) return;
+      const touch = e.touches[0];
+      mascot.style.left = (touch.clientX - offsetX) + 'px';
+      mascot.style.top = (touch.clientY - offsetY) + 'px';
+    });
+
+    document.addEventListener('touchend', () => {
+      if (!dragging) return;
+      dragging = false;
+      mascot.style.animation = 'bounce 1.4s ease-in-out infinite';
+    });
   </script>
 
 </body>

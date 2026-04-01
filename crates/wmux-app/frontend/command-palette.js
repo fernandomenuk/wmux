@@ -35,79 +35,65 @@ let selectedIndex = 0;
 let filteredCommands = [...COMMANDS];
 
 function getFocusedId() {
-  // Simple accessor since we can't easily import from tm without circularity
   return document.querySelector('.pane.focused')?.dataset.surfaceId;
 }
 
 export function toggleCommandPalette() {
-  const palette = document.getElementById('command-palette');
-  if (palette.classList.contains('open')) {
-    palette.classList.remove('open');
-    document.getElementById('cp-input').value = '';
-    document.querySelector('.pane.focused')?.focus();
+  if (isOpen) {
+    closePalette();
   } else {
-    palette.classList.add('open');
-    document.getElementById('cp-input').focus();
-    filteredCommands = [...COMMANDS];
-    selectedIndex = 0;
-    const results = document.getElementById('cp-results');
-    results.innerHTML = '';
-    filteredCommands.forEach((cmd, i) => {
-      const div = document.createElement('div');
-      div.className = `cp-item ${i === selectedIndex ? 'selected' : ''}`;
-      div.innerHTML = `<span>${cmd.name}</span><span class="cp-hint">${cmd.hint}</span>`;
-      div.onclick = () => { cmd.action(); toggleCommandPalette(); };
-      results.appendChild(div);
-    });
+    openPalette();
   }
 }
 
-export function setupCommandPalette() {
+function openPalette() {
   const palette = document.getElementById('command-palette');
   const input = document.getElementById('cp-input');
+  isOpen = true;
+  filteredCommands = [...COMMANDS];
+  selectedIndex = 0;
+  palette.classList.add('open');
+  input.value = '';
+  input.focus();
+  render();
+}
+
+function closePalette() {
+  const palette = document.getElementById('command-palette');
+  const input = document.getElementById('cp-input');
+  isOpen = false;
+  palette.classList.remove('open');
+  input.value = '';
+  document.querySelector('.pane.focused')?.focus();
+}
+
+function render() {
   const results = document.getElementById('cp-results');
+  results.innerHTML = '';
+  filteredCommands.forEach((cmd, i) => {
+    const div = document.createElement('div');
+    div.className = `cp-item ${i === selectedIndex ? 'selected' : ''}`;
+    div.innerHTML = `<span>${cmd.name}</span><span class="cp-hint">${cmd.hint}</span>`;
+    div.onclick = () => { cmd.action(); closePalette(); };
+    results.appendChild(div);
+  });
+}
 
-  const close = () => {
-    isOpen = false;
-    palette.classList.remove('open');
-    input.value = '';
-    // Return focus to terminal
-    document.querySelector('.pane.focused')?.focus();
-  };
+export function setupCommandPalette() {
+  const input = document.getElementById('cp-input');
 
-  const open = () => {
-    isOpen = true;
-    palette.classList.add('open');
-    input.focus();
-    render();
-  };
-
-  const render = () => {
-    results.innerHTML = '';
-    filteredCommands.forEach((cmd, i) => {
-      const div = document.createElement('div');
-      div.className = `cp-item ${i === selectedIndex ? 'selected' : ''}`;
-      div.innerHTML = `<span>${cmd.name}</span><span class="cp-hint">${cmd.hint}</span>`;
-      div.onclick = () => { cmd.action(); close(); };
-      results.appendChild(div);
-    });
-  };
-
-  window.addEventListener('keydown', (e) => {
-    if (e.key === 'k' && (e.ctrlKey || e.metaKey)) {
+  // Handle keyboard navigation on the input itself (works even when xterm has focus)
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
       e.preventDefault();
-      isOpen ? close() : open();
+      closePalette();
     }
-    
-    if (!isOpen) return;
-
-    if (e.key === 'Escape') close();
-    if (e.key === 'ArrowDown') {
+    if (e.key === 'ArrowDown' || (e.key === 'Tab' && !e.shiftKey)) {
       e.preventDefault();
       selectedIndex = (selectedIndex + 1) % filteredCommands.length;
       render();
     }
-    if (e.key === 'ArrowUp') {
+    if (e.key === 'ArrowUp' || (e.key === 'Tab' && e.shiftKey)) {
       e.preventDefault();
       selectedIndex = (selectedIndex - 1 + filteredCommands.length) % filteredCommands.length;
       render();
@@ -115,16 +101,25 @@ export function setupCommandPalette() {
     if (e.key === 'Enter') {
       e.preventDefault();
       filteredCommands[selectedIndex]?.action();
-      close();
+      closePalette();
     }
   });
 
+  // Filter as user types
   input.addEventListener('input', (e) => {
     const val = e.target.value.toLowerCase();
-    filteredCommands = COMMANDS.filter(c => 
+    filteredCommands = COMMANDS.filter(c =>
       c.name.toLowerCase().includes(val) || c.hint.toLowerCase().includes(val)
     );
     selectedIndex = 0;
     render();
+  });
+
+  // Ctrl+K on window as fallback (for when no terminal is focused)
+  window.addEventListener('keydown', (e) => {
+    if ((e.key === 'k' || e.key === 'K') && e.ctrlKey && e.shiftKey) {
+      e.preventDefault();
+      toggleCommandPalette();
+    }
   });
 }

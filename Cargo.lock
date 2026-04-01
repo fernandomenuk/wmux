@@ -5425,7 +5425,7 @@ dependencies = [
 
 [[package]]
 name = "wmux-app"
-version = "0.6.3"
+version = "0.7.0"
 dependencies = [
  "base64 0.22.1",
  "serde",
@@ -5454,7 +5454,7 @@ dependencies = [
 
 [[package]]
 name = "wmux-core"
-version = "0.6.3"
+version = "0.7.0"
 dependencies = [
  "portable-pty",
  "serde",

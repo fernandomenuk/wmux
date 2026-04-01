@@ -434,17 +434,11 @@ async fn setup_claude_code(app_handle: tauri::AppHandle) -> Result<String, Strin
         return Err("MCP server files not found. Reinstall wmux.".into());
     }
 
-    // Claude Code settings path: %USERPROFILE%\.claude\settings.json
+    // Claude Code MCP config: %USERPROFILE%\.claude.json
     let home = std::env::var("USERPROFILE").map_err(|_| "Cannot find home directory")?;
-    let claude_dir = PathBuf::from(&home).join(".claude");
-    let settings_path = claude_dir.join("settings.json");
+    let settings_path = PathBuf::from(&home).join(".claude.json");
 
-    // Create .claude dir if needed
-    if !claude_dir.exists() {
-        std::fs::create_dir_all(&claude_dir).map_err(|e| e.to_string())?;
-    }
-
-    // Read existing settings or start fresh
+    // Read existing config or start fresh
     let mut settings: serde_json::Value = if settings_path.exists() {
         let content = std::fs::read_to_string(&settings_path).map_err(|e| e.to_string())?;
         serde_json::from_str(&content).unwrap_or(serde_json::json!({}))

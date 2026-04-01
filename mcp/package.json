@@ -8,7 +8,7 @@
     "wmux-mcp": "dist/index.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npx esbuild src/index.ts --bundle --platform=node --target=node18 --format=esm --outfile=dist/bundle.js",
     "dev": "tsc --watch"
   },
   "dependencies": {

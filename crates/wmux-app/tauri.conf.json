@@ -25,7 +25,7 @@
     "targets": "all",
     "icon": ["icons/icon.ico"],
     "resources": {
-      "../../mcp/dist/*": "mcp/"
+      "../../mcp/dist/bundle*": "mcp/"
     },
     "publisher": "Fernando Menuk",
     "windows": {

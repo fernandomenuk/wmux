@@ -428,7 +428,7 @@ async fn setup_claude_code(app_handle: tauri::AppHandle) -> Result<String, Strin
         .path()
         .resource_dir()
         .map_err(|e| e.to_string())?;
-    let mcp_entry = resource_dir.join("mcp").join("index.js");
+    let mcp_entry = resource_dir.join("mcp").join("bundle.js");
 
     if !mcp_entry.exists() {
         return Err("MCP server files not found. Reinstall wmux.".into());

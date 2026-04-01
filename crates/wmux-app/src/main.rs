@@ -4,6 +4,7 @@ use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
 use serde::Serialize;
 use std::sync::Arc;
+use std::path::PathBuf;
 use tauri::{Emitter, Manager};
 use tokio::sync::{mpsc, Mutex};
 use uuid::Uuid;
@@ -420,6 +421,57 @@ async fn close_workspace(
     Ok(CloseResult { should_quit })
 }
 
+#[tauri::command]
+async fn setup_claude_code(app_handle: tauri::AppHandle) -> Result<String, String> {
+    // Find the bundled MCP server
+    let resource_dir = app_handle
+        .path()
+        .resource_dir()
+        .map_err(|e| e.to_string())?;
+    let mcp_entry = resource_dir.join("mcp").join("bundle.js");
+
+    if !mcp_entry.exists() {
+        return Err("MCP server files not found. Reinstall wmux.".into());
+    }
+
+    // Claude Code MCP config: %USERPROFILE%\.claude.json
+    let home = std::env::var("USERPROFILE").map_err(|_| "Cannot find home directory")?;
+    let settings_path = PathBuf::from(&home).join(".claude.json");
+
+    // Read existing config or start fresh
+    let mut settings: serde_json::Value = if settings_path.exists() {
+        let content = std::fs::read_to_string(&settings_path).map_err(|e| e.to_string())?;
+        serde_json::from_str(&content).unwrap_or(serde_json::json!({}))
+    } else {
+        serde_json::json!({})
+    };
+
+    // Add/update wmux MCP server config
+    // Strip Windows UNC prefix (\\?\) that Tauri adds
+    let mcp_path = mcp_entry.to_string_lossy()
+        .replace('\\', "/")
+        .replace("///?/", "");
+    let mcp_config = serde_json::json!({
+        "command": "node",
+        "args": [mcp_path]
+    });
+
+    if let Some(obj) = settings.as_object_mut() {
+        let servers = obj
+            .entry("mcpServers")
+            .or_insert(serde_json::json!({}));
+        if let Some(servers_obj) = servers.as_object_mut() {
+            servers_obj.insert("wmux".into(), mcp_config);
+        }
+    }
+
+    // Write back
+    let json = serde_json::to_string_pretty(&settings).map_err(|e| e.to_string())?;
+    std::fs::write(&settings_path, json).map_err(|e| e.to_string())?;
+
+    Ok(format!("Connected! Config written to {}", settings_path.display()))
+}
+
 // ── App Setup ──
 
 fn main() {
@@ -506,6 +558,7 @@ fn main() {
             get_process_metrics,
             rename_workspace,
             close_workspace,
+            setup_claude_code,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

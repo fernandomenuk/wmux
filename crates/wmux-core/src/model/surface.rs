@@ -114,4 +114,18 @@ impl Surface {
     pub fn screen(&self) -> &vt100::Screen {
         self.parser.screen()
     }
+
+    /// Read the terminal screen content as text.
+    pub fn read_output(&self, max_rows: Option<usize>) -> String {
+        let screen = self.parser.screen();
+        let contents = screen.contents();
+        match max_rows {
+            Some(n) => {
+                let lines: Vec<&str> = contents.lines().collect();
+                let start = lines.len().saturating_sub(n);
+                lines[start..].join("\n")
+            }
+            None => contents,
+        }
+    }
 }

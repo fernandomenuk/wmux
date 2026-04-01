@@ -1,3 +1,5 @@
+import { toggleCommandPalette } from './command-palette.js';
+
 const { invoke } = window.__TAURI__.core;
 
 let prefixMode = false;
@@ -5,6 +7,12 @@ let prefixMode = false;
 export function attachKeybindings(term, getFocusedSurfaceId, getCurrentTabIndex) {
   term.attachCustomKeyEventHandler((event) => {
     if (event.type !== 'keydown') return true;
+
+    // Ctrl+Shift+K → command palette
+    if (event.ctrlKey && event.shiftKey && event.key === 'K') {
+      toggleCommandPalette();
+      return false;
+    }
 
     if (!prefixMode && event.ctrlKey && event.key === 'a') {
       prefixMode = true;

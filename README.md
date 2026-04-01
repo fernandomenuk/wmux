@@ -80,12 +80,38 @@ $pipe.Connect(5000)
 
 Compatible with [cmux](https://github.com/anthropics/cmux) v2 protocol.
 
+## MCP Server (Claude Code Integration)
+
+wmux ships with an MCP server so AI agents can control your terminals directly.
+
+**Setup:**
+
+```bash
+cd mcp && npm install && npm run build
+```
+
+Add to your Claude Code MCP config (`~/.claude/settings.json`):
+
+```json
+{
+  "mcpServers": {
+    "wmux": {
+      "command": "node",
+      "args": ["C:/path/to/wmux/mcp/dist/index.js"]
+    }
+  }
+}
+```
+
+Now Claude Code can create workspaces, split panes, run commands, and read terminal output — all through wmux.
+
 ## Architecture
 
 ```
 wmux/
 ├── wmux-core     # PTY management, layouts, state machine
 ├── wmux-app      # Tauri desktop app with WebView UI
+├── mcp/          # MCP server (TypeScript, named pipe bridge)
 └── wmux-cli      # Legacy CLI (archived)
 ```
 

@@ -20,6 +20,14 @@ const COMMANDS = [
   { id: 'close-pane', name: 'Close Pane', hint: 'Remove focused pane', action: () => invoke('close_pane', { surfaceId: getFocusedId() }) },
   { id: 'next-ws', name: 'Next Workspace', hint: 'Switch to next tab', action: () => invoke('next_workspace') },
   { id: 'prev-ws', name: 'Previous Workspace', hint: 'Switch to previous tab', action: () => invoke('prev_workspace') },
+  { id: 'claude-code', name: 'Connect to Claude Code', hint: 'Set up MCP integration', action: async () => {
+    try {
+      const msg = await invoke('setup_claude_code');
+      alert(msg + '\n\nRestart Claude Code to activate.');
+    } catch (e) {
+      alert('Error: ' + e);
+    }
+  }},
 ];
 
 let isOpen = false;
@@ -29,6 +37,29 @@ let filteredCommands = [...COMMANDS];
 function getFocusedId() {
   // Simple accessor since we can't easily import from tm without circularity
   return document.querySelector('.pane.focused')?.dataset.surfaceId;
+}
+
+export function toggleCommandPalette() {
+  const palette = document.getElementById('command-palette');
+  if (palette.classList.contains('open')) {
+    palette.classList.remove('open');
+    document.getElementById('cp-input').value = '';
+    document.querySelector('.pane.focused')?.focus();
+  } else {
+    palette.classList.add('open');
+    document.getElementById('cp-input').focus();
+    filteredCommands = [...COMMANDS];
+    selectedIndex = 0;
+    const results = document.getElementById('cp-results');
+    results.innerHTML = '';
+    filteredCommands.forEach((cmd, i) => {
+      const div = document.createElement('div');
+      div.className = `cp-item ${i === selectedIndex ? 'selected' : ''}`;
+      div.innerHTML = `<span>${cmd.name}</span><span class="cp-hint">${cmd.hint}</span>`;
+      div.onclick = () => { cmd.action(); toggleCommandPalette(); };
+      results.appendChild(div);
+    });
+  }
 }
 
 export function setupCommandPalette() {

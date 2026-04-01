@@ -24,6 +24,9 @@
     "active": true,
     "targets": "all",
     "icon": ["icons/icon.ico"],
+    "resources": {
+      "../../mcp/dist/*": "mcp/"
+    },
     "publisher": "Fernando Menuk",
     "windows": {
       "nsis": {

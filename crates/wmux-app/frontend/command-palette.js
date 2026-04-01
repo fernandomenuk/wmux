@@ -20,6 +20,14 @@ const COMMANDS = [
   { id: 'close-pane', name: 'Close Pane', hint: 'Remove focused pane', action: () => invoke('close_pane', { surfaceId: getFocusedId() }) },
   { id: 'next-ws', name: 'Next Workspace', hint: 'Switch to next tab', action: () => invoke('next_workspace') },
   { id: 'prev-ws', name: 'Previous Workspace', hint: 'Switch to previous tab', action: () => invoke('prev_workspace') },
+  { id: 'claude-code', name: 'Connect to Claude Code', hint: 'Set up MCP integration', action: async () => {
+    try {
+      const msg = await invoke('setup_claude_code');
+      alert(msg + '\n\nRestart Claude Code to activate.');
+    } catch (e) {
+      alert('Error: ' + e);
+    }
+  }},
 ];
 
 let isOpen = false;

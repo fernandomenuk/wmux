@@ -455,7 +455,7 @@
   <section id="hero">
     <div class="container hero">
       <div class="hero-badge"><span>v0.6.0</span> Native Desktop App</div>
-      <h1>cmux for Windows.</h1>
+      <h1><span style="position: relative; display: inline-block;"><span style="text-decoration: line-through; text-decoration-thickness: 3px; opacity: 0.5;">c</span><span style="position: absolute; left: 0; top: 0; color: var(--accent);">W</span></span><span style="margin-left: 0.05em;">mux</span> for Windows.</h1>
       <p class="hero-subtitle">Split panes. Tabbed workspaces. A socket API for AI agents. A high-performance desktop app built with Rust and Tauri.</p>
       <div class="hero-cta">
         <a href="https://github.com/fernandomenuk/wmux/releases/latest/download/wmux-setup.exe" class="btn btn-primary">Download wmux</a>
@@ -640,15 +640,15 @@ nothing to commit, working tree clean
     let dragging = false, offsetX, offsetY;
 
     mascot.addEventListener('mousedown', (e) => {
+      const rect = mascot.getBoundingClientRect();
       dragging = true;
       mascot.style.animation = 'none';
       mascot.style.cursor = 'grabbing';
-      mascot.style.right = 'auto';
-      const rect = mascot.getBoundingClientRect();
       offsetX = e.clientX - rect.left;
       offsetY = e.clientY - rect.top;
       mascot.style.left = rect.left + 'px';
       mascot.style.top = rect.top + 'px';
+      mascot.style.right = 'auto';
       e.preventDefault();
     });
 
@@ -667,15 +667,15 @@ nothing to commit, working tree clean
 
     // Touch support
     mascot.addEventListener('touchstart', (e) => {
+      const rect = mascot.getBoundingClientRect();
       dragging = true;
       mascot.style.animation = 'none';
-      mascot.style.right = 'auto';
       const touch = e.touches[0];
-      const rect = mascot.getBoundingClientRect();
       offsetX = touch.clientX - rect.left;
       offsetY = touch.clientY - rect.top;
       mascot.style.left = rect.left + 'px';
       mascot.style.top = rect.top + 'px';
+      mascot.style.right = 'auto';
       e.preventDefault();
     }, { passive: false });
 
